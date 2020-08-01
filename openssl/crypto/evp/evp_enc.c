@@ -85,7 +85,7 @@ void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *ctx)
 
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {
-    EVP_CIPHER_CTX *ctx = OPENSSL_malloc(sizeof *ctx);
+    EVP_CIPHER_CTX *ctx = OPENSSL_malloc(sizeof(*ctx));
     if (ctx)
         EVP_CIPHER_CTX_init(ctx);
     return ctx;
@@ -317,8 +317,9 @@ int EVP_DecryptInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
     return EVP_CipherInit_ex(ctx, cipher, impl, key, iv, 0);
 }
 
-int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
-                      const unsigned char *in, int inl)
+static int evp_EncryptDecryptUpdate(EVP_CIPHER_CTX *ctx,
+                                    unsigned char *out, int *outl,
+                                    const unsigned char *in, int inl)
 {
     int i, j, bl;
 
@@ -380,6 +381,18 @@ int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
     return 1;
 }
 
+int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
+                      const unsigned char *in, int inl)
+{
+    /* Prevent accidental use of decryption context when encrypting */
+    if (!ctx->encrypt) {
+        EVPerr(EVP_F_EVP_ENCRYPTUPDATE, EVP_R_INVALID_OPERATION);
+        return 0;
+    }
+
+    return evp_EncryptDecryptUpdate(ctx, out, outl, in, inl);
+}
+
 int EVP_EncryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl)
 {
     int ret;
@@ -392,6 +405,12 @@ int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl)
     int n, ret;
     unsigned int i, b, bl;
 
+    /* Prevent accidental use of decryption context when encrypting */
+    if (!ctx->encrypt) {
+        EVPerr(EVP_F_EVP_ENCRYPTFINAL_EX, EVP_R_INVALID_OPERATION);
+        return 0;
+    }
+
     if (ctx->cipher->flags & EVP_CIPH_FLAG_CUSTOM_CIPHER) {
         ret = M_do_cipher(ctx, out, NULL, 0);
         if (ret < 0)
@@ -402,7 +421,7 @@ int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl)
     }
 
     b = ctx->cipher->block_size;
-    OPENSSL_assert(b <= sizeof ctx->buf);
+    OPENSSL_assert(b <= sizeof(ctx->buf));
     if (b == 1) {
         *outl = 0;
         return 1;
@@ -435,6 +454,12 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
     int fix_len;
     unsigned int b;
 
+    /* Prevent accidental use of encryption context when decrypting */
+    if (ctx->encrypt) {
+        EVPerr(EVP_F_EVP_DECRYPTUPDATE, EVP_R_INVALID_OPERATION);
+        return 0;
+    }
+
     if (ctx->cipher->flags & EVP_CIPH_FLAG_CUSTOM_CIPHER) {
         fix_len = M_do_cipher(ctx, out, in, inl);
         if (fix_len < 0) {
@@ -451,10 +476,10 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
     }
 
     if (ctx->flags & EVP_CIPH_NO_PADDING)
-        return EVP_EncryptUpdate(ctx, out, outl, in, inl);
+        return evp_EncryptDecryptUpdate(ctx, out, outl, in, inl);
 
     b = ctx->cipher->block_size;
-    OPENSSL_assert(b <= sizeof ctx->final);
+    OPENSSL_assert(b <= sizeof(ctx->final));
 
     if (ctx->final_used) {
         memcpy(out, ctx->final, b);
@@ -463,7 +488,7 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
     } else
         fix_len = 0;
 
-    if (!EVP_EncryptUpdate(ctx, out, outl, in, inl))
+    if (!evp_EncryptDecryptUpdate(ctx, out, outl, in, inl))
         return 0;
 
     /*
@@ -494,6 +519,13 @@ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl)
 {
     int i, n;
     unsigned int b;
+
+    /* Prevent accidental use of encryption context when decrypting */
+    if (ctx->encrypt) {
+        EVPerr(EVP_F_EVP_DECRYPTFINAL_EX, EVP_R_INVALID_OPERATION);
+        return 0;
+    }
+
     *outl = 0;
 
     if (ctx->cipher->flags & EVP_CIPH_FLAG_CUSTOM_CIPHER) {
@@ -520,7 +552,7 @@ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl)
             EVPerr(EVP_F_EVP_DECRYPTFINAL_EX, EVP_R_WRONG_FINAL_BLOCK_LENGTH);
             return (0);
         }
-        OPENSSL_assert(b <= sizeof ctx->final);
+        OPENSSL_assert(b <= sizeof(ctx->final));
 
         /*
          * The following assumes that the ciphertext has been authenticated.
@@ -651,7 +683,7 @@ int EVP_CIPHER_CTX_copy(EVP_CIPHER_CTX *out, const EVP_CIPHER_CTX *in)
 #endif
 
     EVP_CIPHER_CTX_cleanup(out);
-    memcpy(out, in, sizeof *out);
+    memcpy(out, in, sizeof(*out));
 
     if (in->cipher_data && in->cipher->ctx_size) {
         out->cipher_data = OPENSSL_malloc(in->cipher->ctx_size);

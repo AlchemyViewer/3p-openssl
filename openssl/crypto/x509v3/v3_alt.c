@@ -4,7 +4,7 @@
  * project.
  */
 /* ====================================================================
- * Copyright (c) 1999-2003 The OpenSSL Project.  All rights reserved.
+ * Copyright (c) 1999-2019 The OpenSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -157,12 +157,12 @@ STACK_OF(CONF_VALUE) *i2v_GENERAL_NAME(X509V3_EXT_METHOD *method,
     case GEN_IPADD:
         p = gen->d.ip->data;
         if (gen->d.ip->length == 4)
-            BIO_snprintf(oline, sizeof oline,
+            BIO_snprintf(oline, sizeof(oline),
                          "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
         else if (gen->d.ip->length == 16) {
             oline[0] = 0;
             for (i = 0; i < 8; i++) {
-                BIO_snprintf(htmp, sizeof htmp, "%X", p[0] << 8 | p[1]);
+                BIO_snprintf(htmp, sizeof(htmp), "%X", p[0] << 8 | p[1]);
                 p += 2;
                 strcat(oline, htmp);
                 if (i != 7)
@@ -205,15 +205,18 @@ int GENERAL_NAME_print(BIO *out, GENERAL_NAME *gen)
         break;
 
     case GEN_EMAIL:
-        BIO_printf(out, "email:%s", gen->d.ia5->data);
+        BIO_printf(out, "email:");
+        ASN1_STRING_print(out, gen->d.ia5);
         break;
 
     case GEN_DNS:
-        BIO_printf(out, "DNS:%s", gen->d.ia5->data);
+        BIO_printf(out, "DNS:");
+        ASN1_STRING_print(out, gen->d.ia5);
         break;
 
     case GEN_URI:
-        BIO_printf(out, "URI:%s", gen->d.ia5->data);
+        BIO_printf(out, "URI:");
+        ASN1_STRING_print(out, gen->d.ia5);
         break;
 
     case GEN_DIRNAME:
