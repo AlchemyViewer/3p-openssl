@@ -8,7 +8,7 @@ nasm -f win64 -o ms\uptable.obj ms\uptable.asm
 goto proceed
 
 :ml64
-perl ms/uplink-x86_64.pl masm > ms\uptable.asm
+perl ms\uplink-x86_64.pl masm > ms\uptable.asm
 ml64 -c -Foms\uptable.obj ms\uptable.asm
 
 :proceed
