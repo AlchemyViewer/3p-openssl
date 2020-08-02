@@ -100,7 +100,7 @@ pushd "$OPENSSL_SOURCE_DIR"
             export CFLAG="$LL_BUILD_RELEASE"
 
             # disable idea cypher per Phoenix's patent concerns (DEV-22827)
-            perl Configure "$targetname" no-asm no-idea zlib threads -DNO_WINDOWS_BRAINDEATH \
+            perl Configure "$targetname" no-asm zlib threads -DNO_WINDOWS_BRAINDEATH \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
 
@@ -227,7 +227,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             unset packed[0]
 
             # Release
-            ./Configure zlib threads no-idea shared no-gost $targetname \
+            ./Configure zlib threads shared no-gost $targetname \
                 --prefix="$stage" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" \
                 --with-zlib-lib="$stage/packages/lib/release" \
@@ -314,7 +314,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # '--openssldir' as well.
             # "shared" means build shared and static, instead of just static.
 
-            ./Configure zlib threads shared no-idea debug-linux-x86_64 "$DEBUG_CLFAGS" \
+            ./Configure zlib threads shared debug-linux-x86_64 "$DEBUG_CLFAGS" \
                 --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/debug/
             make depend
@@ -328,7 +328,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 
             make clean
 
-            ./Configure zlib threads shared no-idea "$targetname" "$RELEASE_CFLAGS" \
+            ./Configure zlib threads shared "$targetname" "$RELEASE_CFLAGS" \
                 --prefix="$stage" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" \
                 --with-zlib-lib="$stage"/packages/lib/release/
