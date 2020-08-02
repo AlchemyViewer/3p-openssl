@@ -275,7 +275,15 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # unset DISTCC_HOSTS CC CXX CFLAGS CPPFLAGS CXXFLAGS
 
             # Default target per AUTOBUILD_ADDRSIZE
-            opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE}"
+            opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE}"
+			DEBUG_COMMON_FLAGS="$opts -Og -g -fPIC -DPIC"
+			RELEASE_COMMON_FLAGS="$opts -O3 -g -fPIC -DPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+			DEBUG_CLFAGS="$DEBUG_COMMON_FLAGS"
+			RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
+            DEBUG_CXXLFAGS="$DEBUG_COMMON_FLAGS -std=c++17"
+			RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
+            DEBUG_CPPLFAGS="-DPIC"
+			RELEASE_CPPFLAGS="-DPIC"
 
             # Handle any deliberate platform targeting
             if [ -z "${TARGET_CPPFLAGS:-}" ]; then
@@ -306,13 +314,27 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # '--openssldir' as well.
             # "shared" means build shared and static, instead of just static.
 
-            ./Configure zlib threads shared no-idea "$targetname" -fno-stack-protector "$opts" \
+            ./Configure zlib threads shared no-idea debug-linux-x86_64 "$DEBUG_CLFAGS" \
+                --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
+                --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/debug/
+            make depend
+            make
+            make install_sw
+
+            # conditionally run unit tests
+            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                make test
+            fi
+
+            make clean
+
+            ./Configure zlib threads shared no-idea "$targetname" "$RELEASE_CFLAGS" \
                 --prefix="$stage" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" \
                 --with-zlib-lib="$stage"/packages/lib/release/
             make depend
             make
-            make install
+            make install_sw
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
