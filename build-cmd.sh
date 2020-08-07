@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+shopt -s globstar
+
 cd "$(dirname "$0")"
 
 # turn on verbose debugging output for parabuild logs.
@@ -278,11 +280,11 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE}"
 			DEBUG_COMMON_FLAGS="$opts -Og -g -fPIC -DPIC"
 			RELEASE_COMMON_FLAGS="$opts -O3 -g -fPIC -DPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2"
-			DEBUG_CLFAGS="$DEBUG_COMMON_FLAGS"
+			DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
 			RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
-            DEBUG_CXXLFAGS="$DEBUG_COMMON_FLAGS -std=c++17"
+            DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
 			RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
-            DEBUG_CPPLFAGS="-DPIC"
+            DEBUG_CPPFLAGS="-DPIC"
 			RELEASE_CPPFLAGS="-DPIC"
 
             # Handle any deliberate platform targeting
@@ -294,9 +296,16 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 export CPPFLAGS="${TARGET_CPPFLAGS:-}"
             fi
 
+            # Fix up path for pkgconfig
+            if [ -d "$stage/packages/lib/release/pkgconfig" ]; then
+                fix_pkgconfig_prefix "$stage/packages"
+            fi
+
+            OLD_PKG_CONFIG_PATH="${PKG_CONFIG_PATH:-}"
+
             # Force static linkage to libz by moving .sos out of the way
             trap restore_sos EXIT
-            for solib in "${stage}"/packages/lib/debug/*.so* "${stage}"/packages/lib/release/*.so*; do
+            for solib in "${stage}"/packages/lib/{debug,release}/*.so*; do
                 if [ -f "$solib" ]; then
                     mv -f "$solib" "$solib".disable
                 fi
@@ -313,14 +322,17 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # a part of a directory path, not the entire thing.  Same with
             # '--openssldir' as well.
             # "shared" means build shared and static, instead of just static.
+            export PKG_CONFIG_PATH="$stage/packages/lib/debug/pkgconfig:${OLD_PKG_CONFIG_PATH}"
 
-            ./Configure zlib threads shared debug-linux-x86_64 "$DEBUG_CLFAGS" \
-                --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
+            ./Configure zlib no-zlib-dynamic threads no-shared debug-linux-x86_64 "$DEBUG_CFLAGS" \
+                --prefix="${stage}" --libdir="lib/debug" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/debug/
             make depend
             make
             make install_sw
 
+            sed -i s#"${stage}"#"\${AUTOBUILD_PACKAGES_DIR}"#g ${stage}/lib/debug/pkgconfig/**.pc
+
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
                 make test
@@ -328,26 +340,23 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 
             make clean
 
-            ./Configure zlib threads shared "$targetname" "$RELEASE_CFLAGS" \
-                --prefix="$stage" --libdir="lib/release" --openssldir="share" \
-                --with-zlib-include="$stage/packages/include/zlib" \
-                --with-zlib-lib="$stage"/packages/lib/release/
+            export PKG_CONFIG_PATH="$stage/packages/lib/release/pkgconfig:${OLD_PKG_CONFIG_PATH}"
+
+            ./Configure zlib no-zlib-dynamic threads no-shared "$targetname" "$RELEASE_CFLAGS" \
+                --prefix="${stage}" --libdir="lib/release" --openssldir="share" \
+                --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
             make depend
             make
             make install_sw
 
+            sed -i s#"${stage}"#"\${AUTOBUILD_PACKAGES_DIR}"#g ${stage}/lib/release/pkgconfig/**.pc
+
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
                 make test
             fi
 
             make clean
-
-            # By default, 'make install' leaves even the user write bit off.
-            # This causes trouble for us down the road, along about the time
-            # the consuming build tries to strip libraries.  It's easier to
-            # make writable here than fix the viewer packaging.
-            chmod u+w "$stage"/lib/release/lib{crypto,ssl}.so*
         ;;
     esac
     mkdir -p "$stage/LICENSES"
