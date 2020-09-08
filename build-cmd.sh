@@ -82,30 +82,6 @@ pushd "$OPENSSL_SOURCE_DIR"
         windows*)
             load_vsvars
 
-            mkdir -p "$stage/lib/release"
-
-            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
-            then
-                targetname=VC-WIN32
-                batname=do_ms
-            else
-                targetname=VC-WIN64A
-                batname=do_win64a
-            fi
-
-            # Set CFLAG directly, rather than on the Configure command line.
-            # Configure promises to pass through -switches, but is completely
-            # confounded by /switches. If you change /switches to -switches
-            # using bash string magic, Configure does pass them through --
-            # only to have cl.exe ignore them with extremely verbose warnings!
-            # CFLAG can accept /switches and correctly pass them to cl.exe.
-            export CFLAG="$LL_BUILD_RELEASE"
-
-            # disable idea cypher per Phoenix's patent concerns (DEV-22827)
-            perl Configure "$targetname" no-asm zlib threads -DNO_WINDOWS_BRAINDEATH \
-                --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
-                --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
-
             # We've observed some weird failures in which the PATH is too big
             # to be passed into cmd.exe! When that gets munged, we start
             # seeing errors like failing to understand the 'perl' command --
@@ -127,7 +103,51 @@ pushd "$OPENSSL_SOURCE_DIR"
 from collections import OrderedDict
 print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'))))" "$PATH")"
 
-            # Not using NASM
+            mkdir -p "$stage/lib/debug"
+            mkdir -p "$stage/lib/release"
+
+            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
+            then
+                debugtargetname=debug-VC-WIN32
+                releasetargetname=VC-WIN32
+                batname=do_nasm
+            else
+                debugtargetname=debug-VC-WIN64A
+                releasetargetname=VC-WIN64A
+                batname=do_win64a
+            fi
+
+            # Debug Build
+            perl Configure "$debugtargetname" zlib threads shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE -DZLIB_DLL \
+                --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
+                --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
+
+            # Using NASM
+            ./ms/"$batname.bat"
+
+            nmake -f ms/ntdll.mak
+
+            # conditionally run unit tests
+            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                pushd out32dll.dbg
+                    cp -a $stage/packages/lib/debug/zlibd1.dll .
+                    # linden_test.bat is a clone of test.bat with unavailable
+                    # tests removed and the return status changed to fail if a problem occurs.
+                    ../ms/linden_test.bat
+                popd
+            fi
+
+            cp -a out32dll.dbg/{libeay32,ssleay32}.{lib,dll,exp,pdb} "$stage/lib/debug"
+
+            # Clean
+            nmake -f ms/ntdll.mak vclean
+
+            # Release Build
+            perl Configure "$releasetargetname" zlib threads shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE -DZLIB_DLL \
+                --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
+                --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
+
+            # Using NASM
             ./ms/"$batname.bat"
 
             nmake -f ms/ntdll.mak
@@ -135,13 +155,14 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
                 pushd out32dll
+                    cp -a $stage/packages/lib/release/zlib1.dll .
                     # linden_test.bat is a clone of test.bat with unavailable
                     # tests removed and the return status changed to fail if a problem occurs.
                     ../ms/linden_test.bat
                 popd
             fi
 
-            cp -a out32dll/{libeay32,ssleay32}.{lib,dll} "$stage/lib/release"
+            cp -a out32dll/{libeay32,ssleay32}.{lib,dll,exp,pdb} "$stage/lib/release"
 
             # Clean
             nmake -f ms/ntdll.mak vclean

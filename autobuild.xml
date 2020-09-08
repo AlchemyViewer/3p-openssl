@@ -214,10 +214,10 @@
           </map>
           <key>manifest</key>
           <array>
-            <string>lib/release/libeay32.lib</string>
-            <string>lib/release/libeay32.dll</string>
-            <string>lib/release/ssleay32.lib</string>
-            <string>lib/release/ssleay32.dll</string>
+            <string>lib/debug/libeay32.*</string>
+            <string>lib/debug/ssleay32.*</string>
+            <string>lib/release/libeay32.*</string>
+            <string>lib/release/ssleay32.*</string>
           </array>
           <key>name</key>
           <string>windows</string>
