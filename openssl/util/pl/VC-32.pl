@@ -46,9 +46,16 @@ if ($FLAVOR =~ /WIN64/)
     # 
     $base_cflags= " $mf_cflag";
     my $f = $shlib || $fips ?' /MD':' /MT';
-    $opt_cflags=$f.' /Ox';
+    $opt_cflags=$f.' /O2 /Ob3 /Gy /GL';
     $dbg_cflags=$f.'d /Od -DDEBUG -D_DEBUG';
-    $lflags="/nologo /subsystem:console /opt:ref";
+	if ($debug)
+	{
+		$lflags="/nologo /subsystem:console /opt:ref";
+	}
+	else
+	{
+		$lflags="/nologo /subsystem:console /opt:ref /opt:icf /LTCG";
+	}
 
     *::perlasm_compile_target = sub {
 	my ($target,$source,$bname)=@_;
@@ -157,7 +164,7 @@ else
 # generate symbols.pdb unconditionally
 $app_cflag.=" /Zi /Fd\$(TMP_D)/app";
 $lib_cflag.=" /Zi /Fd\$(TMP_D)/lib";
-$lflags.=" /debug";
+$lflags.=" /DEBUG:FULL";
 
 $obj='.obj';
 $asm_suffix='.asm';
