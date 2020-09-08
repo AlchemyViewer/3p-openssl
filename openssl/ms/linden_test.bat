@@ -1,7 +1,5 @@
 @echo off
 
-rem These unit tests copied from test.bat - ideatest removed
-
 set test=..\ms
 set opath=%PATH%
 PATH=..\ms;%PATH%
@@ -15,6 +13,10 @@ if errorlevel 1 goto done
 
 echo destest
 destest
+if errorlevel 1 goto done
+
+echo ideatest
+ideatest
 if errorlevel 1 goto done
 
 echo bftest
