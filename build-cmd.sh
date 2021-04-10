@@ -385,4 +385,3 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 popd
 
 mkdir -p "$stage"/docs/openssl/
-cp -a README.Linden "$stage"/docs/openssl/
