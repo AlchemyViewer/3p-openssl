@@ -118,54 +118,52 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             fi
 
             # Debug Build
-            perl Configure "$debugtargetname" zlib threads shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE -DZLIB_DLL \
+            perl Configure "$debugtargetname" zlib threads no-shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
 
             # Using NASM
             ./ms/"$batname.bat"
 
-            nmake -f ms/ntdll.mak
+            nmake -f ms/nt.mak
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                pushd out32dll.dbg
-                    cp -a $stage/packages/lib/debug/zlibd1.dll .
+                pushd out32.dbg
                     # linden_test.bat is a clone of test.bat with unavailable
                     # tests removed and the return status changed to fail if a problem occurs.
                     ../ms/linden_test.bat
                 popd
             fi
 
-            cp -a out32dll.dbg/{libeay32,ssleay32}.{lib,dll,exp,pdb} "$stage/lib/debug"
+            cp -a out32.dbg/{libeay32,ssleay32}.lib "$stage/lib/debug"
 
             # Clean
-            nmake -f ms/ntdll.mak vclean
+            nmake -f ms/nt.mak vclean
 
             # Release Build
-            perl Configure "$releasetargetname" zlib threads shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE -DZLIB_DLL \
+            perl Configure "$releasetargetname" zlib threads no-shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
 
             # Using NASM
             ./ms/"$batname.bat"
 
-            nmake -f ms/ntdll.mak
+            nmake -f ms/nt.mak
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                pushd out32dll
-                    cp -a $stage/packages/lib/release/zlib1.dll .
+                pushd out32
                     # linden_test.bat is a clone of test.bat with unavailable
                     # tests removed and the return status changed to fail if a problem occurs.
                     ../ms/linden_test.bat
                 popd
             fi
 
-            cp -a out32dll/{libeay32,ssleay32}.{lib,dll,exp,pdb} "$stage/lib/release"
+            cp -a out32/{libeay32,ssleay32}.lib "$stage/lib/release"
 
             # Clean
-            nmake -f ms/ntdll.mak vclean
+            nmake -f ms/nt.mak vclean
 
             # Publish headers
             mkdir -p "$stage/include/openssl"
