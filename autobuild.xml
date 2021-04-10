@@ -145,6 +145,8 @@
           </map>
           <key>manifest</key>
           <array>
+            <string>lib/debug/libcrypto.a</string>
+            <string>lib/debug/libssl.a</string>
             <string>lib/release/libcrypto.a</string>
             <string>lib/release/libssl.a</string>
           </array>
