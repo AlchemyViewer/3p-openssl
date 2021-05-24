@@ -24,11 +24,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>6cf45c294fee94adf2d89ca062b2a5d1e5375049622f8acbcf6baadb2dc844627824d64f908b9a9b1eee52476e101b27</string>
+              <string>2d4fde52d7e902a8e21f96bd7cf4b400509406e955c1e03a2b4b9ba5f8e7c4c64c01b4c30f71d0544bc0896b0d346471</string>
               <key>hash_algorithm</key>
               <string>sha3_384</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-790/2.0.2/zlib_ng-2.0.2-darwin64-790.tar.xz</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-darwin64-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -38,11 +38,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>ddbf8628f172b1499063c8267e0288eeceb6c937bc62ea40a066822ce695dc85a27908cec509387f64a28accb232737d</string>
+              <string>8d96501a998025bbddf63f4144ac0c48e94573ca09931da119788b13f54b2a282c4312e6ccd399574b8ca3c169408189</string>
               <key>hash_algorithm</key>
               <string>sha3_384</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-790/2.0.2/zlib_ng-2.0.2-linux64-790.tar.xz</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-linux64-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -52,11 +52,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e51e3e1b954a2d244471d2f5a0e089d08eff2276f88b606f0db09b461c2d7e288fb0df11b2966e88d6e5ba85d0432574</string>
+              <string>57b5ea61a9259d6f0573795658b01a615b53b39a021c3b8e23ada8b1136210fac2e1ffa1d95dfca9120dc0327f47a3de</string>
               <key>hash_algorithm</key>
               <string>sha3_384</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-790/2.0.2/zlib_ng-2.0.2-windows-790.tar.xz</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-windows-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -66,18 +66,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>ab17ba76615f4b0eed13e195c283d81e764adf36e2d3d91049a5379a65739aac607d2e3df228dc949d2dec4e38f87f70</string>
+              <string>36ae98f08d724507cb928fc1f7f2109b1e0f6df883d8445e5d7967bc115e8e4850449fee5e2460a181cb2d7929ba7f6f</string>
               <key>hash_algorithm</key>
               <string>sha3_384</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-790/2.0.2/zlib_ng-2.0.2-windows64-790.tar.xz</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-windows64-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.0.2</string>
+        <string>2.0.3</string>
       </map>
     </map>
     <key>package_description</key>
