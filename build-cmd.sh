@@ -118,54 +118,52 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             fi
 
             # Debug Build
-            perl Configure "$debugtargetname" zlib threads shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE -DZLIB_DLL \
+            perl Configure "$debugtargetname" zlib threads no-shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
 
             # Using NASM
             ./ms/"$batname.bat"
 
-            nmake -f ms/ntdll.mak
+            nmake -f ms/nt.mak
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                pushd out32dll.dbg
-                    cp -a $stage/packages/lib/debug/zlibd1.dll .
+                pushd out32.dbg
                     # linden_test.bat is a clone of test.bat with unavailable
                     # tests removed and the return status changed to fail if a problem occurs.
                     ../ms/linden_test.bat
                 popd
             fi
 
-            cp -a out32dll.dbg/{libeay32,ssleay32}.{lib,dll,exp,pdb} "$stage/lib/debug"
+            cp -a out32.dbg/{libeay32,ssleay32}.lib "$stage/lib/debug"
 
             # Clean
-            nmake -f ms/ntdll.mak vclean
+            nmake -f ms/nt.mak vclean
 
             # Release Build
-            perl Configure "$releasetargetname" zlib threads shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE -DZLIB_DLL \
+            perl Configure "$releasetargetname" zlib threads no-shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
 
             # Using NASM
             ./ms/"$batname.bat"
 
-            nmake -f ms/ntdll.mak
+            nmake -f ms/nt.mak
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                pushd out32dll
-                    cp -a $stage/packages/lib/release/zlib1.dll .
+                pushd out32
                     # linden_test.bat is a clone of test.bat with unavailable
                     # tests removed and the return status changed to fail if a problem occurs.
                     ../ms/linden_test.bat
                 popd
             fi
 
-            cp -a out32dll/{libeay32,ssleay32}.{lib,dll,exp,pdb} "$stage/lib/release"
+            cp -a out32/{libeay32,ssleay32}.lib "$stage/lib/release"
 
             # Clean
-            nmake -f ms/ntdll.mak vclean
+            nmake -f ms/nt.mak vclean
 
             # Publish headers
             mkdir -p "$stage/include/openssl"
@@ -179,17 +177,24 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
         ;;
 
         darwin*)
-            # workaround for finding makedepend on OS X
-            export PATH="$PATH":/usr/X11/bin/
+            # Setup osx sdk platform
+            SDKNAME="macosx"
+            export SDKROOT=$(xcodebuild -version -sdk ${SDKNAME} Path)
+            export MACOSX_DEPLOYMENT_TARGET=10.13
 
-            # Install name for dylibs based on major version number
-            # Not clear exactly why Configure/make generates lib*.1.0.0.dylib
-            # for ${major_version}.${minor_version}.${build_version} == 1.0.1,
-            # but obviously we must correctly predict the dylib filenames.
-            crypto_target_name="libcrypto.${major_version}.0.0.dylib"
-            crypto_install_name="@executable_path/../Resources/${crypto_target_name}"
-            ssl_target_name="libssl.${major_version}.0.0.dylib"
-            ssl_install_name="@executable_path/../Resources/${ssl_target_name}"
+            # Setup build flags
+            ARCH_FLAGS="-arch x86_64"
+            SDK_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -isysroot ${SDKROOT}"
+            DEBUG_COMMON_FLAGS="$ARCH_FLAGS $SDK_FLAGS -O0 -g -msse4.2 -fPIC -DPIC"
+            RELEASE_COMMON_FLAGS="$ARCH_FLAGS $SDK_FLAGS -O3 -g -msse4.2 -fPIC -DPIC -fstack-protector-strong"
+            DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
+            RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
+            DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
+            RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
+            DEBUG_CPPFLAGS="-DPIC"
+            RELEASE_CPPFLAGS="-DPIC"
+            DEBUG_LDFLAGS="$ARCH_FLAGS $SDK_FLAGS -Wl,-headerpad_max_install_names -Wl,-macos_version_min,$MACOSX_DEPLOYMENT_TARGET"
+            RELEASE_LDFLAGS="$ARCH_FLAGS $SDK_FLAGS -Wl,-headerpad_max_install_names -Wl,-macos_version_min,$MACOSX_DEPLOYMENT_TARGET"
 
             # Force static linkage by moving .dylibs out of the way
             trap restore_dylibs EXIT
@@ -199,62 +204,15 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 fi
             done
 
-            # Normally here we'd insert -arch $AUTOBUILD_CONFIGURE_ARCH before
-            # $LL_BUILD_RELEASE. But the way we must pass these $opts into
-            # Configure doesn't seem to work for -arch: we get tons of:
-            # clang: warning: argument unused during compilation: '-arch=x86_64'
-            # Anyway, selection of $targetname (below) appears to handle the
-            # -arch switch implicitly.
-            opts="${TARGET_OPTS:-$LL_BUILD_RELEASE}"
-            # As of 2017-09-08:
-            # clang: error: unknown argument: '-gdwarf-with-dsym'
-            opts="${opts/-gdwarf-with-dsym/-gdwarf-2}"
-            export CFLAG="$opts"
-            export LDFLAGS="-Wl,-headerpad_max_install_names"
-
-            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
-            then
-                targetname='darwin-i386-cc 386'
-            else
-                targetname='darwin64-x86_64-cc'
-            fi
-
-            # It seems to be important to Configure to pass (e.g.)
-            # "-iwithsysroot=/some/path" instead of just glomming them on
-            # as separate arguments. So make a pass over $opts, collecting
-            # switches with args in that form into a bash array.
-            packed=()
-            pack=()
-            function flush {
-                local IFS="="
-                # Flush 'pack' array to the next entry of 'packed'.
-                # ${pack[*]} concatenates all of pack's entries into a single
-                # string separated by the first char from $IFS.
-                packed[${#packed[*]}]="${pack[*]:-}"
-                pack=()
-            }
-            for opt in $opts $LDFLAGS
-            do 
-               if [ "${opt#-}" != "$opt" ]
-               then
-                   # 'opt' does indeed start with dash.
-                   flush
-               fi
-               # append 'opt' to 'pack' array
-               pack[${#pack[*]}]="$opt"
-            done
-            # When we exit the above loop, we've got one more pending entry in
-            # 'pack'. Flush that too.
-            flush
-            # We always have an extra first entry in 'packed'. Get rid of that.
-            unset packed[0]
-
-            # Release
-            ./Configure zlib threads shared no-gost $targetname \
-                --prefix="$stage" --libdir="lib/release" --openssldir="share" \
+            # Debug
+            export CFLAGS="$DEBUG_CFLAGS"
+            export CXXLAGS="$DEBUG_CXXFLAGS"
+            export CPPLAGS="$DEBUG_CPPFLAGS"
+            export LDFLAGS="$DEBUG_LDFLAGS"
+            ./Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-x86_64-cc "$DEBUG_CFLAGS" \
+                --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" \
-                --with-zlib-lib="$stage/packages/lib/release" \
-                "${packed[@]}"
+                --with-zlib-lib="$stage/packages/lib/debug/"
             make depend
             make
             # Avoid plain 'make install' because, at least on Yosemite,
@@ -263,15 +221,29 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # this make target.
             make install_sw
 
-            # Modify .dylib path information.  Do this after install
-            # to the copies rather than built or the dylib's will be
-            # linked again wiping out the install_name.
-            crypto_stage_name="${stage}/lib/release/${crypto_target_name}"
-            ssl_stage_name="${stage}/lib/release/${ssl_target_name}"
-            chmod u+w "${crypto_stage_name}" "${ssl_stage_name}"
-            install_name_tool -id "${ssl_install_name}" "${ssl_stage_name}"
-            install_name_tool -id "${crypto_install_name}" "${crypto_stage_name}"
-            install_name_tool -change "${crypto_stage_name}" "${crypto_install_name}" "${ssl_stage_name}"
+            # conditionally run unit tests
+            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                make test
+            fi
+
+            make clean
+
+            # Release
+            export CFLAGS="$RELEASE_CFLAGS"
+            export CXXLAGS="$RELEASE_CXXFLAGS"
+            export CPPLAGS="$RELEASE_CPPFLAGS"
+            export LDFLAGS="$RELEASE_LDFLAGS"
+            ./Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$RELEASE_CFLAGS" \
+                --prefix="$stage" --libdir="lib/release" --openssldir="share" \
+                --with-zlib-include="$stage/packages/include/zlib" \
+                --with-zlib-lib="$stage/packages/lib/release/"
+            make depend
+            make
+            # Avoid plain 'make install' because, at least on Yosemite,
+            # installing the man pages into the staging area creates problems
+            # due to the number of symlinks. Thanks to Cinder for suggesting
+            # this make target.
+            make install_sw
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
@@ -299,14 +271,14 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 
             # Default target per AUTOBUILD_ADDRSIZE
             opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE}"
-			DEBUG_COMMON_FLAGS="$opts -Og -g -fPIC -DPIC"
-			RELEASE_COMMON_FLAGS="$opts -O3 -g -fPIC -DPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2"
-			DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
-			RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
+            DEBUG_COMMON_FLAGS="$opts -Og -g -fPIC -DPIC"
+            RELEASE_COMMON_FLAGS="$opts -O3 -g -fPIC -DPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+            DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
+            RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
             DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
-			RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
+            RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
             DEBUG_CPPFLAGS="-DPIC"
-			RELEASE_CPPFLAGS="-DPIC"
+            RELEASE_CPPFLAGS="-DPIC"
 
             # Handle any deliberate platform targeting
             if [ -z "${TARGET_CPPFLAGS:-}" ]; then
@@ -332,13 +304,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 fi
             done
 
-            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
-            then
-                targetname='linux-generic32'
-            else
-                targetname='linux-x86_64'
-            fi
-
             # '--libdir' functions a bit different than usual.  Here it names
             # a part of a directory path, not the entire thing.  Same with
             # '--openssldir' as well.
@@ -363,7 +328,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 
             export PKG_CONFIG_PATH="$stage/packages/lib/release/pkgconfig:${OLD_PKG_CONFIG_PATH}"
 
-            ./Configure zlib no-zlib-dynamic threads no-shared "$targetname" "$RELEASE_CFLAGS" \
+            ./Configure zlib no-zlib-dynamic threads no-shared linux-x86_64 "$RELEASE_CFLAGS" \
                 --prefix="${stage}" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
             make depend
@@ -385,4 +350,3 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 popd
 
 mkdir -p "$stage"/docs/openssl/
-cp -a README.Linden "$stage"/docs/openssl/

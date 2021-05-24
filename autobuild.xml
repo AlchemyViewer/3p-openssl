@@ -3,66 +3,46 @@
 <map>
     <key>installables</key>
     <map>
-      <key>zlib</key>
+      <key>zlib-ng</key>
       <map>
+        <key>canonical_repo</key>
+        <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-zlib-ng</string>
         <key>copyright</key>
         <string>Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler</string>
         <key>description</key>
-        <string>Zlib Data Compression Library</string>
+        <string>zlib replacement with optimizations for next generation systems.</string>
         <key>license</key>
         <string>zlib</string>
         <key>license_file</key>
-        <string>LICENSES/zlib.txt</string>
+        <string>LICENSES/zlib-ng.txt</string>
         <key>name</key>
-        <string>zlib</string>
+        <string>zlib-ng</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>1a79eeac199c2d94e4ae4e5d0194e25f</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/zlib_3p-update-zlib/rev/296881/arch/Darwin/installer/zlib-1.2.8.296881-darwin-296881.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>9785bda5b4d3b41bf391b33d0da78c9e</string>
+              <string>2d4fde52d7e902a8e21f96bd7cf4b400509406e955c1e03a2b4b9ba5f8e7c4c64c01b4c30f71d0544bc0896b0d346471</string>
+              <key>hash_algorithm</key>
+              <string>sha3_384</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/54858/510190/zlib-1.2.8.538988-darwin64-538988.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-darwin64-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>98a8c775c581ca80bb559e8b4e8eaae7</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-zlib/rev/314131/arch/Linux/installer/zlib-1.2.8.314131-linux-314131.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5d7866be22eaca6d38cfd0bb4e411fb0</string>
+              <string>8d96501a998025bbddf63f4144ac0c48e94573ca09931da119788b13f54b2a282c4312e6ccd399574b8ca3c169408189</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>sha3_384</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/zlib/linux64/debian10/zlib-1.2.11.202200500-linux64-202200500.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-linux64-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -72,11 +52,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>23ba44e15affc13b15717f02d98ed61e</string>
+              <string>57b5ea61a9259d6f0573795658b01a615b53b39a021c3b8e23ada8b1136210fac2e1ffa1d95dfca9120dc0327f47a3de</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>sha3_384</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/zlib/windows/zlib-1.2.11.308-windows-308.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-windows-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -86,26 +66,26 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>b231c0fd98a151a66c890a4bb29cfea3</string>
+              <string>36ae98f08d724507cb928fc1f7f2109b1e0f6df883d8445e5d7967bc115e8e4850449fee5e2460a181cb2d7929ba7f6f</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>sha3_384</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/zlib/windows64/zlib-1.2.11.308-windows64-308.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng-883/2.0.3/zlib_ng-2.0.3-windows64-883.tar.xz</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.2.11.308</string>
+        <string>2.0.3</string>
       </map>
     </map>
     <key>package_description</key>
     <map>
       <key>canonical_repo</key>
-      <string>https://bitbucket.org/lindenlab/3p-openssl</string>
+      <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-openssl</string>
       <key>copyright</key>
-      <string>Copyright (c) 1998-2018 The OpenSSL Project.  All rights reserved; Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</string>
+      <string>Copyright (c) 1998-2021 The OpenSSL Project.  All rights reserved; Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</string>
       <key>description</key>
       <string>Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) Library</string>
       <key>license</key>
@@ -144,7 +124,6 @@
           <array>
             <string>include/openssl/*.h</string>
             <string>LICENSES/openssl.txt</string>
-            <string>docs/openssl/README.Linden</string>
           </array>
           <key>name</key>
           <string>common</string>
@@ -166,6 +145,8 @@
           </map>
           <key>manifest</key>
           <array>
+            <string>lib/debug/libcrypto.a</string>
+            <string>lib/debug/libssl.a</string>
             <string>lib/release/libcrypto.a</string>
             <string>lib/release/libssl.a</string>
           </array>

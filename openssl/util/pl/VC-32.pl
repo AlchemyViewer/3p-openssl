@@ -45,17 +45,11 @@ if ($FLAVOR =~ /WIN64/)
     # considered safe to ignore.
     # 
     $base_cflags= " $mf_cflag";
-    my $f = $shlib || $fips ?' /MD':' /MT';
-    $opt_cflags=$f.' /O2 /Ob3 /Gy /GL';
+    my $f = $shlib || $fips ?' /MD':' /MD';
+    $opt_cflags=$f.' /O2 /Ob3 /Gy';
     $dbg_cflags=$f.'d /Od -DDEBUG -D_DEBUG';
-	if ($debug)
-	{
-		$lflags="/nologo /subsystem:console /opt:ref";
-	}
-	else
-	{
-		$lflags="/nologo /subsystem:console /opt:ref /opt:icf /LTCG";
-	}
+	$lflags="/nologo /subsystem:console /opt:ref";
+
 
     *::perlasm_compile_target = sub {
 	my ($target,$source,$bname)=@_;
@@ -137,7 +131,7 @@ elsif ($FLAVOR =~ /CE/)
 else	# Win32
     {
     $base_cflags= " $mf_cflag";
-    my $f = $shlib || $fips ?' /MD':' /MT';
+    my $f = $shlib || $fips ?' /MD':' /MD';
     $ff = "/fixed";
     $opt_cflags=$f.' /Ox /O2 /Ob2';
     $dbg_cflags=$f.'d /Od -DDEBUG -D_DEBUG';
@@ -162,8 +156,8 @@ else
 	}
 
 # generate symbols.pdb unconditionally
-$app_cflag.=" /Zi /Fd\$(TMP_D)/app";
-$lib_cflag.=" /Zi /Fd\$(TMP_D)/lib";
+$app_cflag.=" /Z7 /Fd\$(TMP_D)/app";
+$lib_cflag.=" /Z7 /Fd\$(TMP_D)/lib";
 $lflags.=" /DEBUG:FULL";
 
 $obj='.obj';
