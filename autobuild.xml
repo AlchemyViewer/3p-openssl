@@ -195,10 +195,10 @@
           </map>
           <key>manifest</key>
           <array>
-            <string>lib/debug/libeay32.*</string>
-            <string>lib/debug/ssleay32.*</string>
-            <string>lib/release/libeay32.*</string>
-            <string>lib/release/ssleay32.*</string>
+            <string>lib/debug/libcrypto.*</string>
+            <string>lib/debug/libssl.*</string>
+            <string>lib/release/libcrypto.*</string>
+            <string>lib/release/libssl.*</string>
           </array>
           <key>name</key>
           <string>windows</string>
