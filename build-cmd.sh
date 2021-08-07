@@ -143,7 +143,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 nmake test
             fi
 
-            cp -a {libcrypto,libssl}.lib "$stage/lib/debug"
+            cp -a {libcrypto,libssl}.lib "$stage/lib/release"
 
             # Publish headers
             mkdir -p "$stage/include/openssl"
