@@ -60,7 +60,7 @@ OPENSSL_SOURCE_DIR="openssl"
 # get a plain text file containing the relative path to crypto/opensslv.h, and
 # a very strange "version number" because perl can't find
 # OPENSSL_VERSION_NUMBER. (Sigh.)
-raw_version=$(perl -ne 's/#\s*define\s+OPENSSL_VERSION_NUMBER\s+([\d]+)/$1/ && print' "${OPENSSL_SOURCE_DIR}/crypto/opensslv.h")
+raw_version=$(perl -ne 's/#\s*define\s+OPENSSL_VERSION_NUMBER\s+([\d]+)/$1/ && print' "${OPENSSL_SOURCE_DIR}/include/openssl/opensslv.h")
 
 major_version=$(echo ${raw_version:2:1})
 minor_version=$((10#$(echo ${raw_version:3:2})))
