@@ -183,18 +183,19 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             export MACOSX_DEPLOYMENT_TARGET=10.13
 
             # Setup build flags
-            ARCH_FLAGS="-arch x86_64"
+            X86_ARCH_FLAGS="-arch x86_64"
+            ARM64_ARCH_FLAGS="-arch arm64"
             SDK_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -isysroot ${SDKROOT}"
-            DEBUG_COMMON_FLAGS="$ARCH_FLAGS $SDK_FLAGS -O0 -g -msse4.2 -fPIC -DPIC"
-            RELEASE_COMMON_FLAGS="$ARCH_FLAGS $SDK_FLAGS -O3 -g -msse4.2 -fPIC -DPIC -fstack-protector-strong"
+            DEBUG_COMMON_FLAGS="$SDK_FLAGS -O0 -g -msse4.2 -fPIC -DPIC"
+            RELEASE_COMMON_FLAGS="$SDK_FLAGS -O3 -g -msse4.2 -fPIC -DPIC -fstack-protector-strong"
             DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
             RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
             DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
             RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
             DEBUG_CPPFLAGS="-DPIC"
             RELEASE_CPPFLAGS="-DPIC"
-            DEBUG_LDFLAGS="$ARCH_FLAGS $SDK_FLAGS -Wl,-headerpad_max_install_names -Wl,-macos_version_min,$MACOSX_DEPLOYMENT_TARGET"
-            RELEASE_LDFLAGS="$ARCH_FLAGS $SDK_FLAGS -Wl,-headerpad_max_install_names -Wl,-macos_version_min,$MACOSX_DEPLOYMENT_TARGET"
+            DEBUG_LDFLAGS="$SDK_FLAGS -Wl,-headerpad_max_install_names"
+            RELEASE_LDFLAGS="$SDK_FLAGS -Wl,-headerpad_max_install_names"
 
             # Force static linkage by moving .dylibs out of the way
             trap restore_dylibs EXIT
@@ -205,52 +206,54 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             done
 
             # Debug
-            export CFLAGS="$DEBUG_CFLAGS"
-            export CXXLAGS="$DEBUG_CXXFLAGS"
-            export CPPLAGS="$DEBUG_CPPFLAGS"
-            export LDFLAGS="$DEBUG_LDFLAGS"
-            ./Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-x86_64-cc "$DEBUG_CFLAGS" \
-                --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
-                --with-zlib-include="$stage/packages/include/zlib" \
-                --with-zlib-lib="$stage/packages/lib/debug/"
-            make depend
-            make
-            # Avoid plain 'make install' because, at least on Yosemite,
-            # installing the man pages into the staging area creates problems
-            # due to the number of symlinks. Thanks to Cinder for suggesting
-            # this make target.
-            make install_sw
+            mkdir -p "build_x86_debug"
+            pushd "build_x86_debug"
+                export CFLAGS="$X86_ARCH_FLAGS $DEBUG_CFLAGS"
+                export CXXLAGS="$X86_ARCH_FLAGS $DEBUG_CXXFLAGS"
+                export CPPLAGS="$DEBUG_CPPFLAGS"
+                export LDFLAGS="$X86_ARCH_FLAGS $DEBUG_LDFLAGS"
+                ../Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-x86_64-cc "$DEBUG_CFLAGS" \
+                    --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
+                    --with-zlib-include="$stage/packages/include/zlib" \
+                    --with-zlib-lib="$stage/packages/lib/debug"
+                make depend
+                make
+                # Avoid plain 'make install' because, at least on Yosemite,
+                # installing the man pages into the staging area creates problems
+                # due to the number of symlinks. Thanks to Cinder for suggesting
+                # this make target.
+                make install_sw
 
-            # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                make test
-            fi
-
-            make clean
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    make test
+                fi
+            popd
 
             # Release
-            export CFLAGS="$RELEASE_CFLAGS"
-            export CXXLAGS="$RELEASE_CXXFLAGS"
-            export CPPLAGS="$RELEASE_CPPFLAGS"
-            export LDFLAGS="$RELEASE_LDFLAGS"
-            ./Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$RELEASE_CFLAGS" \
-                --prefix="$stage" --libdir="lib/release" --openssldir="share" \
-                --with-zlib-include="$stage/packages/include/zlib" \
-                --with-zlib-lib="$stage/packages/lib/release/"
-            make depend
-            make
-            # Avoid plain 'make install' because, at least on Yosemite,
-            # installing the man pages into the staging area creates problems
-            # due to the number of symlinks. Thanks to Cinder for suggesting
-            # this make target.
-            make install_sw
+            mkdir -p "build_x86_debug"
+            pushd "build_x86_debug"
+                export CFLAGS="$X86_ARCH_FLAGS $RELEASE_CFLAGS"
+                export CXXLAGS="$X86_ARCH_FLAGS $RELEASE_CXXFLAGS"
+                export CPPLAGS="$RELEASE_CPPFLAGS"
+                export LDFLAGS="$X86_ARCH_FLAGS $RELEASE_LDFLAGS"
+                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$RELEASE_CFLAGS" \
+                    --prefix="$stage" --libdir="lib/release" --openssldir="share" \
+                    --with-zlib-include="$stage/packages/include/zlib" \
+                    --with-zlib-lib="$stage/packages/lib/release"
+                make depend
+                make
+                # Avoid plain 'make install' because, at least on Yosemite,
+                # installing the man pages into the staging area creates problems
+                # due to the number of symlinks. Thanks to Cinder for suggesting
+                # this make target.
+                make install_sw
 
-            # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                make test
-            fi
-
-            make clean
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    make test
+                fi
+            popd
         ;;
 
         linux*)
