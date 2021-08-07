@@ -109,11 +109,9 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             then
                 debugtargetname=debug-VC-WIN32
                 releasetargetname=VC-WIN32
-                batname=do_nasm
             else
                 debugtargetname=debug-VC-WIN64A
                 releasetargetname=VC-WIN64A
-                batname=do_win64a
             fi
 
             # Debug Build
@@ -121,58 +119,38 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
 
-            # Using NASM
-            ./ms/"$batname.bat"
-
-            nmake -f ms/nt.mak
+            nmake
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                pushd out32.dbg
-                    # linden_test.bat is a clone of test.bat with unavailable
-                    # tests removed and the return status changed to fail if a problem occurs.
-                    ../ms/linden_test.bat
-                popd
+                nmake test
             fi
 
-            cp -a out32.dbg/{libeay32,ssleay32}.lib "$stage/lib/debug"
+            cp -a {libcrypto,libssl}.lib "$stage/lib/debug"
 
             # Clean
-            nmake -f ms/nt.mak vclean
+            nmake distclean
 
             # Release Build
             perl Configure "$releasetargetname" zlib threads no-shared -DNO_WINDOWS_BRAINDEATH -DUNICODE -D_UNICODE \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
 
-            # Using NASM
-            ./ms/"$batname.bat"
-
-            nmake -f ms/nt.mak
+            nmake
 
             # conditionally run unit tests
             if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                pushd out32
-                    # linden_test.bat is a clone of test.bat with unavailable
-                    # tests removed and the return status changed to fail if a problem occurs.
-                    ../ms/linden_test.bat
-                popd
+                nmake test
             fi
 
-            cp -a out32/{libeay32,ssleay32}.lib "$stage/lib/release"
-
-            # Clean
-            nmake -f ms/nt.mak vclean
+            cp -a {libcrypto,libssl}.lib "$stage/lib/debug"
 
             # Publish headers
             mkdir -p "$stage/include/openssl"
+            cp -a include/openssl/*.h "$stage/include/openssl"
 
-            # These files are symlinks in the SSL dist but just show up as text files
-            # on windows that contain a string to their source.  So run some perl to
-            # copy the right files over. Note, even a 64-bit Windows build
-            # puts header files into inc32/openssl!
-            perl ../copy-windows-links.pl \
-                "inc32/openssl" "$(cygpath -w "$stage/include/openssl")"
+            # Clean
+            nmake distclean
         ;;
 
         darwin*)
