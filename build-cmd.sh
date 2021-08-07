@@ -73,8 +73,7 @@ patch_level_version=$(echo ${str:patch_level_dec-1:1})
 
 version_str=${major_version}.${minor_version}.${build_version}${patch_level_version}
 
-build=${AUTOBUILD_BUILD_ID:=0}
-echo "${version_str}.${build}" > "${stage}/VERSION.txt"
+echo "${version_str}" > "${stage}/VERSION.txt"
 
 pushd "$OPENSSL_SOURCE_DIR"
     case "$AUTOBUILD_PLATFORM" in
