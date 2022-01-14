@@ -24,11 +24,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>090435a0951c0548f4cac4d932ba802b1222cb97a0e08cac1e2cf399f638beb0d53ffc86d9d8074d25c130a2e390be271d84371da0ed70c1d52e71b42b36f853</string>
+              <string>0b1ba1ba5269a23e37392728e83a948b83f7c4da0eedf832a382a9aad3c3270303182723ef9d6f41e9728c6211f35830700340fad8a07fd2a9f27a83fba6caf5</string>
               <key>hash_algorithm</key>
               <string>blake2b</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.5.1289/zlib_ng-2.0.5-darwin64-1289.tar.zst</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.6.1345/zlib_ng-2.0.6-darwin64-1345.tar.zst</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -38,11 +38,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>88685a966a85f92abbc26971728f0eb40de42cfc62325aa881a28cdd832c12b9ac4256fb40d26a50b8184886a80bd3af75cb5156f6fac06940d8d523559d3d4b</string>
+              <string>5a9482c3c83686e9df50ea928031995b2a90489cc30cba4f4589549e65f18244e47bd46cc7877e2307f8ee90ed4fbb291d754e6526f310913730a3672a7a801b</string>
               <key>hash_algorithm</key>
               <string>blake2b</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.5.1289/zlib_ng-2.0.5-linux64-1289.tar.zst</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.6.1345/zlib_ng-2.0.6-linux64-1345.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -52,18 +52,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>43383261ca4a2c296a5d955c424ae6056339efac6681798da0cdbbd39d3275e8783b120c3a7dddbddb39281fa5ba9626ca20a9aed8e3caeaa7283659cdf4b41d</string>
+              <string>e30e56f96240c45d81f0a1f752e54f0cea69039c77ca237ef3cfdedbc5f2a6140d36031c7bd1f0ca7bc412ec883d700ea8ffba303e1df77133dd6885fea695d2</string>
               <key>hash_algorithm</key>
               <string>blake2b</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.5.1289/zlib_ng-2.0.5-windows64-1289.tar.zst</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.6.1345/zlib_ng-2.0.6-windows64-1345.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.0.5</string>
+        <string>2.0.6</string>
       </map>
     </map>
     <key>package_description</key>
