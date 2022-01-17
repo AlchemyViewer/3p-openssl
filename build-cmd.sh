@@ -176,7 +176,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                     --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/debug"
-                make depend
                 make
                 # Avoid plain 'make install' because, at least on Yosemite,
                 # installing the man pages into the staging area creates problems
@@ -202,7 +201,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                     --prefix="$stage" --libdir="lib/release" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/release"
-                make depend
                 make
                 # Avoid plain 'make install' because, at least on Yosemite,
                 # installing the man pages into the staging area creates problems
@@ -278,7 +276,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" --libdir="lib/debug" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/debug/
-            make depend
             make
             make install_sw
 
@@ -297,7 +294,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
-            make depend
             make
             make install_sw
 
