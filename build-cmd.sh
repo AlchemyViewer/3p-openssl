@@ -139,22 +139,20 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             # Setup osx sdk platform
             SDKNAME="macosx"
             export SDKROOT=$(xcodebuild -version -sdk ${SDKNAME} Path)
-            export MACOSX_DEPLOYMENT_TARGET=10.15
 
             # Setup build flags
-            X86_ARCH_FLAGS="-arch x86_64"
-            ARM64_ARCH_FLAGS="-arch arm64"
-            SDK_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -isysroot ${SDKROOT}"
-            DEBUG_COMMON_FLAGS="$SDK_FLAGS -O0 -g -msse4.2 -fPIC -DPIC"
-            RELEASE_COMMON_FLAGS="$SDK_FLAGS -O3 -g -msse4.2 -fPIC -DPIC -fstack-protector-strong"
+            ARCH_FLAGS_X86="-arch x86_64 -mmacosx-version-min=10.15 -isysroot ${SDKROOT} -msse4.2"
+            ARCH_FLAGS_ARM64="-arch arm64 -mmacosx-version-min=12.0 -isysroot ${SDKROOT}"
+            DEBUG_COMMON_FLAGS="-O0 -g -fPIC -DPIC"
+            RELEASE_COMMON_FLAGS="-O3 -g -fPIC -DPIC -fstack-protector-strong"
             DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
             RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
             DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
             RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
             DEBUG_CPPFLAGS="-DPIC"
             RELEASE_CPPFLAGS="-DPIC"
-            DEBUG_LDFLAGS="$SDK_FLAGS -Wl,-headerpad_max_install_names"
-            RELEASE_LDFLAGS="$SDK_FLAGS -Wl,-headerpad_max_install_names"
+            DEBUG_LDFLAGS="-Wl,-headerpad_max_install_names"
+            RELEASE_LDFLAGS="-Wl,-headerpad_max_install_names"
 
             # Force static linkage by moving .dylibs out of the way
             trap restore_dylibs EXIT
@@ -164,19 +162,22 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 fi
             done
 
+            # x86 Deploy Target
+            export MACOSX_DEPLOYMENT_TARGET=10.15
+
             # Debug
             mkdir -p "build_x86_debug"
             pushd "build_x86_debug"
-                export CFLAGS="$X86_ARCH_FLAGS $DEBUG_CFLAGS"
-                export CXXLAGS="$X86_ARCH_FLAGS $DEBUG_CXXFLAGS"
+                export CFLAGS="$ARCH_FLAGS_X86 $DEBUG_CFLAGS"
+                export CXXLAGS="$ARCH_FLAGS_X86 $DEBUG_CXXFLAGS"
                 export CPPLAGS="$DEBUG_CPPFLAGS"
-                export LDFLAGS="$X86_ARCH_FLAGS $DEBUG_LDFLAGS"
-                ../Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-x86_64-cc "$DEBUG_CFLAGS" \
-                    --with-rand-seed="os,rdcpu" \
-                    --prefix="$stage" --libdir="lib/debug" --openssldir="share" \
+                export LDFLAGS="$ARCH_FLAGS_X86 $DEBUG_LDFLAGS"
+                ../Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-x86_64-cc "$ARCH_FLAGS_X86 $DEBUG_CFLAGS" \
+                    --with-rand-seed="os" \
+                    --prefix="$stage/debug_x86" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/debug"
-                make
+                make -j$AUTOBUILD_CPU_COUNT
                 # Avoid plain 'make install' because, at least on Yosemite,
                 # installing the man pages into the staging area creates problems
                 # due to the number of symlinks. Thanks to Cinder for suggesting
@@ -190,18 +191,18 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             popd
 
             # Release
-            mkdir -p "build_x86_debug"
-            pushd "build_x86_debug"
-                export CFLAGS="$X86_ARCH_FLAGS $RELEASE_CFLAGS"
-                export CXXLAGS="$X86_ARCH_FLAGS $RELEASE_CXXFLAGS"
+            mkdir -p "build_x86_release"
+            pushd "build_x86_release"
+                export CFLAGS="$ARCH_FLAGS_X86 $RELEASE_CFLAGS"
+                export CXXLAGS="$ARCH_FLAGS_X86 $RELEASE_CXXFLAGS"
                 export CPPLAGS="$RELEASE_CPPFLAGS"
-                export LDFLAGS="$X86_ARCH_FLAGS $RELEASE_LDFLAGS"
-                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$RELEASE_CFLAGS" \
-                    --with-rand-seed="os,rdcpu" \
-                    --prefix="$stage" --libdir="lib/release" --openssldir="share" \
+                export LDFLAGS="$ARCH_FLAGS_X86 $RELEASE_LDFLAGS"
+                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$ARCH_FLAGS_X86 $RELEASE_CFLAGS" \
+                    --with-rand-seed="os" \
+                    --prefix="$stage/release_x86" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/release"
-                make
+                make -j$AUTOBUILD_CPU_COUNT
                 # Avoid plain 'make install' because, at least on Yosemite,
                 # installing the man pages into the staging area creates problems
                 # due to the number of symlinks. Thanks to Cinder for suggesting
@@ -213,6 +214,74 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                     make test
                 fi
             popd
+
+            # ARM64 Deploy Target
+            export MACOSX_DEPLOYMENT_TARGET=12.0
+
+            # Debug
+            mkdir -p "build_arm64_debug"
+            pushd "build_arm64_debug"
+                export CFLAGS="$ARCH_FLAGS_ARM64 $DEBUG_CFLAGS"
+                export CXXLAGS="$ARCH_FLAGS_ARM64 $DEBUG_CXXFLAGS"
+                export CPPLAGS="$DEBUG_CPPFLAGS"
+                export LDFLAGS="$ARCH_FLAGS_ARM64 $DEBUG_LDFLAGS"
+                ../Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-arm64-cc "$ARCH_FLAGS_ARM64 $DEBUG_CFLAGS" \
+                    --with-rand-seed="os" \
+                    --prefix="$stage/debug_arm64" --openssldir="share" \
+                    --with-zlib-include="$stage/packages/include/zlib" \
+                    --with-zlib-lib="$stage/packages/lib/debug"
+                make -j$AUTOBUILD_CPU_COUNT
+                # Avoid plain 'make install' because, at least on Yosemite,
+                # installing the man pages into the staging area creates problems
+                # due to the number of symlinks. Thanks to Cinder for suggesting
+                # this make target.
+                make install_sw
+
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    make test
+                fi
+            popd
+
+            # Release
+            mkdir -p "build_arm64_release"
+            pushd "build_arm64_release"
+                export CFLAGS="$ARCH_FLAGS_ARM64 $RELEASE_CFLAGS"
+                export CXXLAGS="$ARCH_FLAGS_ARM64 $RELEASE_CXXFLAGS"
+                export CPPLAGS="$RELEASE_CPPFLAGS"
+                export LDFLAGS="$ARCH_FLAGS_ARM64 $RELEASE_LDFLAGS"
+                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-arm64-cc "$ARCH_FLAGS_ARM64 $RELEASE_CFLAGS" \
+                    --with-rand-seed="os" \
+                    --prefix="$stage/release_arm64" --openssldir="share" \
+                    --with-zlib-include="$stage/packages/include/zlib" \
+                    --with-zlib-lib="$stage/packages/lib/release"
+                make -j$AUTOBUILD_CPU_COUNT
+                # Avoid plain 'make install' because, at least on Yosemite,
+                # installing the man pages into the staging area creates problems
+                # due to the number of symlinks. Thanks to Cinder for suggesting
+                # this make target.
+                make install_sw
+
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    make test
+                fi
+            popd
+
+            # create stage structure
+            mkdir -p "$stage/include/openssl"
+            mkdir -p "$stage/lib/debug"
+            mkdir -p "$stage/lib/release"
+
+           # create fat libraries
+            lipo -create ${stage}/debug_x86/lib/libcrypto.a ${stage}/debug_arm64/lib/libcrypto.a -output ${stage}/lib/debug/libcrypto.a
+            lipo -create ${stage}/debug_x86/lib/libssl.a ${stage}/debug_arm64/lib/libssl.a -output ${stage}/lib/debug/libssl.a
+            lipo -create ${stage}/release_x86/lib/libcrypto.a ${stage}/release_arm64/lib/libcrypto.a -output ${stage}/lib/release/libcrypto.a
+            lipo -create ${stage}/release_x86/lib/libssl.a ${stage}/release_arm64/lib/libssl.a -output ${stage}/lib/release/libssl.a
+
+            # copy headers these have been verified to be equivalent in this version of openssl
+            mv $stage/release_x86/include/openssl/* $stage/include/openssl
+
         ;;
 
         linux*)
@@ -276,7 +345,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" --libdir="lib/debug" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/debug/
-            make
+            make -j$AUTOBUILD_CPU_COUNT
             make install_sw
 
             sed -i s#"${stage}"#"\${AUTOBUILD_PACKAGES_DIR}"#g ${stage}/lib/debug/pkgconfig/**.pc
@@ -294,7 +363,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
-            make
+            make -j$AUTOBUILD_CPU_COUNT
             make install_sw
 
             sed -i s#"${stage}"#"\${AUTOBUILD_PACKAGES_DIR}"#g ${stage}/lib/release/pkgconfig/**.pc
