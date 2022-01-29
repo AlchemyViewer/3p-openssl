@@ -216,7 +216,7 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             popd
 
             # ARM64 Deploy Target
-            export MACOSX_DEPLOYMENT_TARGET=12.0
+            export MACOSX_DEPLOYMENT_TARGET=11.0
 
             # Debug
             mkdir -p "build_arm64_debug"
