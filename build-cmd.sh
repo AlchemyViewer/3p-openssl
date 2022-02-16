@@ -54,6 +54,26 @@ source_environment_tempfile="$stage/source_environment.sh"
 . "$source_environment_tempfile"
 
 OPENSSL_SOURCE_DIR="openssl"
+# Look in crypto/opensslv.h instead of the more obvious
+# include/openssl/opensslv.h because the latter is (supposed to be) a symlink
+# to the former. That works on Mac and Linux but not Windows: on Windows we
+# get a plain text file containing the relative path to crypto/opensslv.h, and
+# a very strange "version number" because perl can't find
+# OPENSSL_VERSION_NUMBER. (Sigh.)
+raw_version=$(perl -ne 's/#\s*define\s+OPENSSL_VERSION_NUMBER\s+([\d]+)/$1/ && print' "${OPENSSL_SOURCE_DIR}/include/openssl/opensslv.h")
+
+major_version=$(echo ${raw_version:2:1})
+minor_version=$((10#$(echo ${raw_version:3:2})))
+build_version=$((10#$(echo ${raw_version:5:2})))
+
+patch_level_hex=$(echo $raw_version | cut -c 8-9)
+patch_level_dec=$((16#$patch_level_hex))
+str="abcdefghijklmnopqrstuvwxyz"
+patch_level_version=$(echo ${str:patch_level_dec-1:1})
+
+version_str=${major_version}.${minor_version}.${build_version}${patch_level_version}
+
+echo "${version_str}" > "${stage}/VERSION.txt"
 
 pushd "$OPENSSL_SOURCE_DIR"
     case "$AUTOBUILD_PLATFORM" in
@@ -384,5 +404,4 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
     cp -a LICENSE "$stage/LICENSES/openssl.txt"
 popd
 
-version=$(sed -n -E 's/# define OPENSSL_VERSION_STR "([0-9.]+)"/\1/p' "${stage}/include/openssl/opensslv.h")
-echo "${version}" > "${stage}/VERSION.txt"
+mkdir -p "$stage"/docs/openssl/
