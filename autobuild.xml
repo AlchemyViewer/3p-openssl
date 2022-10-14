@@ -156,9 +156,7 @@
           </map>
           <key>manifest</key>
           <array>
-            <string>lib/debug/pkgconfig/*</string>
             <string>lib/debug/*.a</string>
-            <string>lib/release/pkgconfig/*</string>
             <string>lib/release/*.a</string>
           </array>
           <key>name</key>
