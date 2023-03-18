@@ -71,7 +71,7 @@
       <key>canonical_repo</key>
       <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-openssl</string>
       <key>copyright</key>
-      <string>Copyright (c) 1998-2021 The OpenSSL Project.  All rights reserved; Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</string>
+      <string>Copyright (c) 1998-2023 The OpenSSL Project.  All rights reserved; Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</string>
       <key>description</key>
       <string>Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) Library</string>
       <key>license</key>
