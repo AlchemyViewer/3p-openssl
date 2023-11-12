@@ -54,53 +54,12 @@ source_environment_tempfile="$stage/source_environment.sh"
 . "$source_environment_tempfile"
 
 OPENSSL_SOURCE_DIR="openssl"
-# Look in crypto/opensslv.h instead of the more obvious
-# include/openssl/opensslv.h because the latter is (supposed to be) a symlink
-# to the former. That works on Mac and Linux but not Windows: on Windows we
-# get a plain text file containing the relative path to crypto/opensslv.h, and
-# a very strange "version number" because perl can't find
-# OPENSSL_VERSION_NUMBER. (Sigh.)
-raw_version=$(perl -ne 's/#\s*define\s+OPENSSL_VERSION_NUMBER\s+([\d]+)/$1/ && print' "${OPENSSL_SOURCE_DIR}/include/openssl/opensslv.h")
-
-major_version=$(echo ${raw_version:2:1})
-minor_version=$((10#$(echo ${raw_version:3:2})))
-build_version=$((10#$(echo ${raw_version:5:2})))
-
-patch_level_hex=$(echo $raw_version | cut -c 8-9)
-patch_level_dec=$((16#$patch_level_hex))
-str="abcdefghijklmnopqrstuvwxyz"
-patch_level_version=$(echo ${str:patch_level_dec-1:1})
-
-version_str=${major_version}.${minor_version}.${build_version}${patch_level_version}
-
-echo "${version_str}" > "${stage}/VERSION.txt"
 
 pushd "$OPENSSL_SOURCE_DIR"
     case "$AUTOBUILD_PLATFORM" in
 
         windows*)
             load_vsvars
-
-            # We've observed some weird failures in which the PATH is too big
-            # to be passed into cmd.exe! When that gets munged, we start
-            # seeing errors like failing to understand the 'perl' command --
-            # which we *just* successfully used. Thing is, by this point in
-            # the script we've acquired a shocking number of duplicate
-            # entries. Dedup the PATH using Python's OrderedDict, which
-            # preserves the order in which you insert keys.
-            # We find that some of the Visual Studio PATH entries appear both
-            # with and without a trailing slash, which is pointless. Strip
-            # those off and dedup what's left.
-            # Pass the existing PATH as an explicit argument rather than
-            # reading it from the environment to bypass the fact that cygwin
-            # implicitly converts PATH to Windows form when running a native
-            # executable. Since we're setting bash's PATH, leave everything in
-            # cygwin form. That means splitting and rejoining on ':' rather
-            # than on os.pathsep, which on Windows is ';'.
-            # Use python -u, else the resulting PATH will end with a spurious '\r'.
-            export PATH="$(python -u -c "import sys
-from collections import OrderedDict
-print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'))))" "$PATH")"
 
             mkdir -p "$stage/lib/debug"
             mkdir -p "$stage/lib/release"
@@ -116,7 +75,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 
             # Debug Build
             perl Configure "$debugtargetname" zlib threads no-shared -DUNICODE -D_UNICODE \
-                --with-rand-seed="os,rdcpu" \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
 
@@ -134,7 +92,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
 
             # Release Build
             perl Configure "$releasetargetname" zlib threads no-shared -DUNICODE -D_UNICODE \
-                --with-rand-seed="os,rdcpu" \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
 
@@ -197,7 +154,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 export CPPLAGS="$DEBUG_CPPFLAGS"
                 export LDFLAGS="$ARCH_FLAGS_X86 $DEBUG_LDFLAGS"
                 ../Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-x86_64-cc "$ARCH_FLAGS_X86 $DEBUG_CFLAGS" \
-                    --with-rand-seed="os" \
                     --prefix="$stage/debug_x86" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/debug"
@@ -222,7 +178,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 export CPPLAGS="$RELEASE_CPPFLAGS"
                 export LDFLAGS="$ARCH_FLAGS_X86 $RELEASE_LDFLAGS"
                 ../Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$ARCH_FLAGS_X86 $RELEASE_CFLAGS" \
-                    --with-rand-seed="os" \
                     --prefix="$stage/release_x86" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/release"
@@ -250,7 +205,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 export CPPLAGS="$DEBUG_CPPFLAGS"
                 export LDFLAGS="$ARCH_FLAGS_ARM64 $DEBUG_LDFLAGS"
                 ../Configure zlib no-zlib-dynamic threads no-shared debug-darwin64-arm64-cc "$ARCH_FLAGS_ARM64 $DEBUG_CFLAGS" \
-                    --with-rand-seed="os" \
                     --prefix="$stage/debug_arm64" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/debug"
@@ -275,7 +229,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
                 export CPPLAGS="$RELEASE_CPPFLAGS"
                 export LDFLAGS="$ARCH_FLAGS_ARM64 $RELEASE_LDFLAGS"
                 ../Configure zlib no-zlib-dynamic threads no-shared darwin64-arm64-cc "$ARCH_FLAGS_ARM64 $RELEASE_CFLAGS" \
-                    --with-rand-seed="os" \
                     --prefix="$stage/release_arm64" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
                     --with-zlib-lib="$stage/packages/lib/release"
@@ -366,7 +319,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             export PKG_CONFIG_PATH="$stage/packages/lib/debug/pkgconfig:${OLD_PKG_CONFIG_PATH}"
 
             ./Configure zlib no-zlib-dynamic threads no-shared debug-linux-x86_64 "$DEBUG_CFLAGS" \
-                --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" --libdir="lib/debug" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/debug/
             make -j$AUTOBUILD_CPU_COUNT
@@ -384,7 +336,6 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
             export PKG_CONFIG_PATH="$stage/packages/lib/release/pkgconfig:${OLD_PKG_CONFIG_PATH}"
 
             ./Configure zlib no-zlib-dynamic threads no-shared linux-x86_64 "$RELEASE_CFLAGS" \
-                --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" --libdir="lib/release" --openssldir="share" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
             make -j$AUTOBUILD_CPU_COUNT
@@ -401,7 +352,8 @@ print(':'.join(OrderedDict((dir.rstrip('/'), 1) for dir in sys.argv[1].split(':'
         ;;
     esac
     mkdir -p "$stage/LICENSES"
-    cp -a LICENSE "$stage/LICENSES/openssl.txt"
+    cp -a LICENSE.txt "$stage/LICENSES/openssl.txt"
 popd
 
-mkdir -p "$stage"/docs/openssl/
+version=$(sed -n -E 's/# define OPENSSL_VERSION_STR "([0-9.]+)"/\1/p' "${stage}/include/openssl/opensslv.h")
+echo "${version}" > "${stage}/VERSION.txt"
