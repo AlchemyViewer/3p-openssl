@@ -50,7 +50,7 @@ my ($no_des, $no_dh, $no_dsa, $no_ec, $no_ec2m, $no_rc2, $no_zlib)
 
 $no_rc2 = 1 if disabled("legacy");
 
-plan tests => 18;
+plan tests => 23;
 
 ok(run(test(["pkcs7_test"])), "test pkcs7");
 
@@ -222,13 +222,15 @@ my @smime_pkcs7_tests = (
       \&final_compare
     ],
 
-    [ "enveloped content test streaming S/MIME format, DES, 3 recipients, key only used",
+    [ "enveloped content test streaming S/MIME format, DES, 3 recipients, cert and key files used",
       [ "{cmd1}", @defaultprov, "-encrypt", "-in", $smcont,
         "-stream", "-out", "{output}.cms",
         $smrsa1,
         catfile($smdir, "smrsa2.pem"),
-        catfile($smdir, "smrsa3.pem") ],
-      [ "{cmd2}", @defaultprov, "-decrypt", "-inkey", catfile($smdir, "smrsa3.pem"),
+        catfile($smdir, "smrsa3-cert.pem") ],
+      [ "{cmd2}", @defaultprov, "-decrypt",
+	"-recip", catfile($smdir, "smrsa3-cert.pem"),
+	"-inkey", catfile($smdir, "smrsa3-key.pem"),
         "-in", "{output}.cms", "-out", "{output}.txt" ],
       \&final_compare
     ],
@@ -655,7 +657,7 @@ my @smime_cms_param_tests_autodigestmax = (
         "-keyopt", "rsa_padding_mode:pss", "-keyopt", "rsa_pss_saltlen:auto-digestmax",
         "-out", "{output}.cms" ],
       # digest is SHA-512, which produces 64, bytes of output, but an RSA-PSS
-      # signature with a 1024 bit RSA key can only accomodate 62
+      # signature with a 1024 bit RSA key can only accommodate 62
       sub { my %opts = @_; rsapssSaltlen("$opts{output}.cms") == 62; },
       [ "{cmd2}", @defaultprov, "-verify", "-in", "{output}.cms", "-inform", "PEM",
         "-CAfile", $smroot, "-out", "{output}.txt" ],
@@ -993,6 +995,92 @@ subtest "CMS binary input tests\n" => sub {
        "verify binary input with -binary missing -crlfeol");
 };
 
+subtest "CMS signed digest, DER format" => sub {
+    plan tests => 2;
+
+    # Pre-computed SHA256 digest of $smcont in hexadecimal form
+    my $digest = "ff236ef61b396355f75a4cc6e1c306d4c309084ae271a9e2ad6888f10a101b32";
+
+    my $sig_file = "signature.der";
+    ok(run(app(["openssl", "cms", @prov, "-sign", "-digest", $digest,
+                    "-outform", "DER",
+                    "-certfile", catfile($smdir, "smroot.pem"),
+                    "-signer", catfile($smdir, "smrsa1.pem"),
+                    "-out", $sig_file])),
+        "CMS sign pre-computed digest, DER format");
+
+    ok(run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-inform", "DER",
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-content", $smcont])),
+       "Verify CMS signed digest, DER format");
+};
+
+subtest "CMS signed digest, S/MIME format" => sub {
+    plan tests => 2;
+
+    # Pre-computed SHA256 digest of $smcont in hexadecimal form
+    my $digest = "ff236ef61b396355f75a4cc6e1c306d4c309084ae271a9e2ad6888f10a101b32";
+
+    my $sig_file = "signature.smime";
+    ok(run(app(["openssl", "cms", @prov, "-sign", "-digest", $digest,
+                    "-outform", "SMIME",
+                    "-certfile", catfile($smdir, "smroot.pem"),
+                    "-signer", catfile($smdir, "smrsa1.pem"),
+                    "-out", $sig_file])),
+        "CMS sign pre-computed digest, S/MIME format");
+
+    ok(run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-inform", "SMIME",
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-content", $smcont])),
+       "Verify CMS signed digest, S/MIME format");
+};
+
+subtest "CMS code signing test" => sub {
+    plan tests => 7;
+    my $sig_file = "signature.p7s";
+    ok(run(app(["openssl", "cms", @prov, "-sign", "-in", $smcont,
+                   "-certfile", catfile($smdir, "smroot.pem"),
+                   "-signer", catfile($smdir, "smrsa1.pem"),
+                   "-out", $sig_file])),
+       "accept perform CMS signature with smime certificate");
+
+    ok(run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-content", $smcont])),
+       "accept verify CMS signature with smime certificate");
+
+    ok(!run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-purpose", "codesign",
+                    "-content", $smcont])),
+       "fail verify CMS signature with smime certificate for purpose code signing");
+
+    ok(!run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-purpose", "football",
+                    "-content", $smcont])),
+       "fail verify CMS signature with invalid purpose argument");
+
+    ok(run(app(["openssl", "cms", @prov, "-sign", "-in", $smcont,
+                   "-certfile", catfile($smdir, "smroot.pem"),
+                   "-signer", catfile($smdir, "csrsa1.pem"),
+                   "-out", $sig_file])),
+        "accept perform CMS signature with code signing certificate");
+
+    ok(run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-purpose", "codesign",
+                    "-content", $smcont])),
+       "accept verify CMS signature with code signing certificate for purpose code signing");
+
+    ok(!run(app(["openssl", "cms", @prov, "-verify", "-in", $sig_file,
+                    "-CAfile", catfile($smdir, "smroot.pem"),
+                    "-content", $smcont])),
+       "fail verify CMS signature with code signing certificate for purpose smime_sign");
+};
+
 # Test case for missing MD algorithm (must not segfault)
 
 with({ exit_checker => sub { return shift == 4; } },
@@ -1001,7 +1089,15 @@ with({ exit_checker => sub { return shift == 4; } },
                     '-inform', 'PEM',
                     '-in', data_file("pkcs7-md4.pem"),
                    ])),
-            "Check failure of EVP_DigestInit is handled correctly");
+            "Check failure of EVP_DigestInit in PKCS7 signed is handled");
+
+        ok(run(app(['openssl', 'smime', '-decrypt',
+                    '-inform', 'PEM',
+                    '-in', data_file("pkcs7-md4-encrypted.pem"),
+                    '-recip', srctop_file("test", "certs", "ee-cert.pem"),
+                    '-inkey', srctop_file("test", "certs", "ee-key.pem")
+                   ])),
+            "Check failure of EVP_DigestInit in PKCS7 signedAndEnveloped is handled");
     });
 
 sub check_availability {
@@ -1071,3 +1167,51 @@ with({ exit_checker => sub { return shift == 3; } },
 		   ])),
 	   "Check for failure when cipher does not have an assigned OID (issue#22225)");
      });
+
+# Test encrypt to three recipients, and decrypt using key-only;
+# i.e. do not follow the recommended practice of providing the
+# recipient cert in the decrypt op.
+#
+# Use RSAES-OAEP for key-transport, not RSAES-PKCS-v1_5.
+#
+# Because the cert is not provided during decrypt, all RSA ciphertexts
+# are decrypted in turn, and when/if there is a valid decryption, it
+# is assumed the correct content-key has been recovered.
+#
+# That process may fail with RSAES-PKCS-v1_5 b/c there is a
+# non-negligible chance that decrypting a random input using
+# RSAES-PKCS-v1_5 can result in a valid plaintext (so two content-keys
+# could be recovered and the wrong one might be used).
+#
+# See https://github.com/openssl/project/issues/380
+subtest "encrypt to three recipients with RSA-OAEP, key only decrypt" => sub {
+    plan tests => 3;
+
+    my $pt = srctop_file("test", "smcont.txt");
+    my $ct = "smtst.cms";
+    my $ptpt = "smtst.txt";
+
+    ok(run(app(['openssl', 'cms',
+		@defaultprov,
+		'-encrypt', '-aes128',
+		'-in', $pt,
+		'-out', $ct,
+		'-stream',
+		'-recip', catfile($smdir, "smrsa1.pem"),
+		'-keyopt', 'rsa_padding_mode:oaep',
+		'-recip', catfile($smdir, "smrsa2.pem"),
+		'-keyopt', 'rsa_padding_mode:oaep',
+		'-recip', catfile($smdir, "smrsa3-cert.pem"),
+		'-keyopt', 'rsa_padding_mode:oaep',
+	       ])),
+       "encrypt to three recipients with RSA-OAEP (avoid openssl/project issue#380)");
+    ok(run(app(['openssl', 'cms',
+		@defaultprov,
+		'-decrypt', '-aes128',
+		'-in', $ct,
+		'-out', $ptpt,
+		'-inkey', catfile($smdir, "smrsa3-key.pem"),
+	       ])),
+       "decrypt with key only");
+    is(compare($pt, $ptpt), 0, "compare original message with decrypted ciphertext");
+};
