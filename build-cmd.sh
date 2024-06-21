@@ -218,7 +218,7 @@ pushd "$OPENSSL_SOURCE_DIR"
             ./Configure zlib no-zlib-dynamic threads no-shared linux-x86_64 "$opts_c" \
                 --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" \
-                --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
+                --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/
             make -j$AUTOBUILD_CPU_COUNT
             make install_sw
 
