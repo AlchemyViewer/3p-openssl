@@ -8,10 +8,12 @@ jobs:
         addrsize: ["64"]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup Homebrew Packages
+      - name: Setup Chocolatey Packages
         if: ${{ runner.os == 'Windows' }}
-        shell: bash
-        run: choco install nasm
+        shell: pwsh
+        run: |
+          choco install nasm
+          echo "C:\Program Files\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - uses: AlchemyViewer/action-autobuild@v4
         with:
           addrsize: ${{ matrix.addrsize }}
