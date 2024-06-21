@@ -24,9 +24,6 @@ fi
 top="$(pwd)"
 stage="$top/stage"
 
-[ -f "$stage"/packages/include/zlib/zlib.h ] || \
-{ echo "You haven't yet run 'autobuild install'." 1>&2; exit 1; }
-
 # load autobuild provided shell functions and variables
 source_environment_tempfile="$stage/source_environment.sh"
 "$autobuild" source_environment > "$source_environment_tempfile"
