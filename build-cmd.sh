@@ -72,7 +72,7 @@ pushd "$OPENSSL_SOURCE_DIR"
             fi
 
             # Debug Build
-            perl Configure "$debugtargetname" zlib threads no-shared -DUNICODE -D_UNICODE \
+            perl Configure "$debugtargetname" zlib threads no-shared -DUNICODE -D_UNICODE /FS \
                 --with-rand-seed="os,rdcpu" \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
@@ -90,7 +90,7 @@ pushd "$OPENSSL_SOURCE_DIR"
             nmake distclean
 
             # Release Build
-            perl Configure "$releasetargetname" zlib threads no-shared -DUNICODE -D_UNICODE \
+            perl Configure "$releasetargetname" zlib threads no-shared -DUNICODE -D_UNICODE /FS \
                 --with-rand-seed="os,rdcpu" \
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
@@ -107,9 +107,6 @@ pushd "$OPENSSL_SOURCE_DIR"
             # Publish headers
             mkdir -p "$stage/include/openssl"
             cp -a include/openssl/*.h "$stage/include/openssl"
-
-            # Clean
-            nmake distclean
         ;;
 
         darwin*)
