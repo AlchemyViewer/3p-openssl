@@ -12,14 +12,8 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: pwsh
         run: |
-          choco install nasm
-          echo "C:\Program Files\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - uses: shogo82148/actions-setup-perl@v1
-        if: ${{ runner.os == 'Windows' }}
-        with:
-          perl-version: "5.38"
-          distribution: strawberry
-      - uses: AlchemyViewer/action-autobuild@v4
+          choco install -y nasm jom
+          echo "C:\Program Files\NASM;C:\ProgramData\chocolatey\lib\jom\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         with:
           addrsize: ${{ matrix.addrsize }}
           build-variables-repo: alchemyviewer/build-variables

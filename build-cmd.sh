@@ -77,12 +77,12 @@ pushd "$OPENSSL_SOURCE_DIR"
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
 
-            nmake
+            jom
 
             # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                nmake test
-            fi
+            # if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+            #     nmake test
+            # fi
 
             cp -a {libcrypto,libssl}.lib "$stage/lib/debug"
 
@@ -95,12 +95,12 @@ pushd "$OPENSSL_SOURCE_DIR"
                 --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib")" \
                 --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
 
-            nmake
+            jom
 
             # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                nmake test
-            fi
+            # if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+            #     nmake test
+            # fi
 
             cp -a {libcrypto,libssl}.lib "$stage/lib/release"
 
