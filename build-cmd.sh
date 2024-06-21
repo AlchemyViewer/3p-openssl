@@ -57,6 +57,8 @@ pushd "$OPENSSL_SOURCE_DIR"
         windows*)
             load_vsvars
 
+            export PATH=/c/Strawberry/perl/bin:$PATH
+
             mkdir -p "$stage/lib/debug"
             mkdir -p "$stage/lib/release"
 
