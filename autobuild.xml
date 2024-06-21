@@ -188,7 +188,7 @@
       <key>name</key>
       <string>openssl</string>
       <key>canonical_repo</key>
-      <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-openssl</string>
+      <string>https://github.com/AlchemyViewer/3p-openssl</string>
       <key>description</key>
       <string>Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) Library</string>
       <key>source_directory</key>

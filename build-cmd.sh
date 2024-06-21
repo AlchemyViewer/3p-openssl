@@ -114,35 +114,24 @@ pushd "$OPENSSL_SOURCE_DIR"
         ;;
 
         darwin*)
-            # Deploy Targets
-            X86_DEPLOY=11.0
-            ARM64_DEPLOY=11.0
-
             # Setup build flags
-            ARCH_FLAGS_X86="-arch x86_64 -mmacosx-version-min=${X86_DEPLOY} -msse4.2"
-            ARCH_FLAGS_ARM64="-arch arm64 -mmacosx-version-min=${ARM64_DEPLOY}"
-            DEBUG_COMMON_FLAGS="-O0 -g -fPIC -DPIC"
-            RELEASE_COMMON_FLAGS="-O3 -g -fPIC -DPIC -fstack-protector-strong"
-            DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
-            RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
-            DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
-            RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
-            DEBUG_CPPFLAGS="-DPIC"
-            RELEASE_CPPFLAGS="-DPIC"
-            DEBUG_LDFLAGS="-Wl,-headerpad_max_install_names"
-            RELEASE_LDFLAGS="-Wl,-headerpad_max_install_names"
+            C_OPTS_X86="-arch x86_64 $LL_BUILD_RELEASE_CFLAGS"
+            C_OPTS_ARM64="-arch arm64 $LL_BUILD_RELEASE_CFLAGS"
+            CXX_OPTS_X86="-arch x86_64 $LL_BUILD_RELEASE_CXXFLAGS"
+            CXX_OPTS_ARM64="-arch arm64 $LL_BUILD_RELEASE_CXXFLAGS"
+            LINK_OPTS_X86="-arch x86_64 $LL_BUILD_RELEASE_LINKER"
+            LINK_OPTS_ARM64="-arch arm64 $LL_BUILD_RELEASE_LINKER"
 
-            # x86 Deploy Target
-            export MACOSX_DEPLOYMENT_TARGET=${X86_DEPLOY}
+            # deploy target
+            export MACOSX_DEPLOYMENT_TARGET=${LL_BUILD_DARWIN_BASE_DEPLOY_TARGET}
 
             # Release
             mkdir -p "build_x86_release"
             pushd "build_x86_release"
-                export CFLAGS="$ARCH_FLAGS_X86 $RELEASE_CFLAGS"
-                export CXXLAGS="$ARCH_FLAGS_X86 $RELEASE_CXXFLAGS"
-                export CPPLAGS="$RELEASE_CPPFLAGS"
-                export LDFLAGS="$ARCH_FLAGS_X86 $RELEASE_LDFLAGS"
-                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$ARCH_FLAGS_X86 $RELEASE_CFLAGS" \
+                export CFLAGS="$C_OPTS_X86"
+                export CXXLAGS="$CXX_OPTS_X86"
+                export LDFLAGS="$LINK_OPTS_X86"
+                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-x86_64-cc "$C_OPTS_X86" \
                     --with-rand-seed="os" \
                     --prefix="$stage/release_x86" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
@@ -163,11 +152,10 @@ pushd "$OPENSSL_SOURCE_DIR"
             # Release
             mkdir -p "build_arm64_release"
             pushd "build_arm64_release"
-                export CFLAGS="$ARCH_FLAGS_ARM64 $RELEASE_CFLAGS"
-                export CXXLAGS="$ARCH_FLAGS_ARM64 $RELEASE_CXXFLAGS"
-                export CPPLAGS="$RELEASE_CPPFLAGS"
-                export LDFLAGS="$ARCH_FLAGS_ARM64 $RELEASE_LDFLAGS"
-                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-arm64-cc "$ARCH_FLAGS_ARM64 $RELEASE_CFLAGS" \
+                export CFLAGS="$C_OPTS_ARM64"
+                export CXXLAGS="$CXX_OPTS_ARM64"
+                export LDFLAGS="$LINK_OPTS_ARM64"
+                ../Configure zlib no-zlib-dynamic threads no-shared darwin64-arm64-cc "$C_OPTS_ARM64" \
                     --with-rand-seed="os" \
                     --prefix="$stage/release_arm64" --openssldir="share" \
                     --with-zlib-include="$stage/packages/include/zlib" \
@@ -212,18 +200,11 @@ pushd "$OPENSSL_SOURCE_DIR"
             # So, clear out bits that shouldn't affect our configure-directed build
             # but which do nonetheless.
             #
-            # unset DISTCC_HOSTS CC CXX CFLAGS CPPFLAGS CXXFLAGS
+            unset DISTCC_HOSTS CFLAGS CPPFLAGS CXXFLAGS
 
-            # Default target per AUTOBUILD_ADDRSIZE
-            opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE}"
-            DEBUG_COMMON_FLAGS="$opts -Og -g -fPIC -DPIC"
-            RELEASE_COMMON_FLAGS="$opts -O3 -g -fPIC -DPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2"
-            DEBUG_CFLAGS="$DEBUG_COMMON_FLAGS"
-            RELEASE_CFLAGS="$RELEASE_COMMON_FLAGS"
-            DEBUG_CXXFLAGS="$DEBUG_COMMON_FLAGS -std=c++17"
-            RELEASE_CXXFLAGS="$RELEASE_COMMON_FLAGS -std=c++17"
-            DEBUG_CPPFLAGS="-DPIC"
-            RELEASE_CPPFLAGS="-DPIC"
+            # Default target per --address-size
+            opts_c="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE_CFLAGS}"
+            opts_cxx="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE_CXXFLAGS}"
 
             # Handle any deliberate platform targeting
             if [ -z "${TARGET_CPPFLAGS:-}" ]; then
@@ -234,7 +215,7 @@ pushd "$OPENSSL_SOURCE_DIR"
                 export CPPFLAGS="${TARGET_CPPFLAGS:-}"
             fi
 
-            ./Configure zlib no-zlib-dynamic threads no-shared linux-x86_64 "$RELEASE_CFLAGS" \
+            ./Configure zlib no-zlib-dynamic threads no-shared linux-x86_64 "$opts_c" \
                 --with-rand-seed="os,rdcpu" \
                 --prefix="${stage}" \
                 --with-zlib-include="$stage/packages/include/zlib" --with-zlib-lib="$stage"/packages/lib/release/
