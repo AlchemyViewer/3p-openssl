@@ -65,6 +65,7 @@ pushd "$OPENSSL_SOURCE_DIR"
 
             load_vsvars
 
+            mkdir -p "$stage/lib/debug"
             mkdir -p "$stage/lib/release"
 
             if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
@@ -81,6 +82,29 @@ pushd "$OPENSSL_SOURCE_DIR"
             # using bash string magic, Configure does pass them through --
             # only to have cl.exe ignore them with extremely verbose warnings!
             # CFLAGS can accept /switches and correctly pass them to cl.exe.
+            opts="$(replace_switch /Zi /Z7 $LL_BUILD_DEBUG)"
+            plainopts="$(remove_switch /GR $(remove_cxxstd $opts))"
+            export CFLAGS="$plainopts"
+            export CXXFLAGS="$opts"
+
+            # Debug Build
+            perl Configure "debug-$targetname" zlib no-zlib-dynamic threads no-shared -DUNICODE -D_UNICODE /FS \
+                --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib-ng")" \
+                --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
+
+            jom
+
+            # conditionally run unit tests
+            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                jom test
+            fi
+
+            cp -a {libcrypto,libssl}.lib "$stage/lib/debug"
+
+            # Clean
+            nmake distclean
+
+            # Now set up Release flags
             opts="$(replace_switch /Zi /Z7 $LL_BUILD_RELEASE)"
             plainopts="$(remove_switch /GR $(remove_cxxstd $opts))"
             export CFLAGS="$plainopts"
