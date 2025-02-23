@@ -16,11 +16,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e363e3b889c52fda7601d7aeaa9832307034651e</string>
+              <string>db512fb9036db60e702990bc652487197a0e6c1542de6d35163368f07e8f5d0c21f74071c2c2d3b70ee10f28b2e4717dd340196d7656e1fd515f7a4a07bfc6d9</string>
               <key>hash_algorithm</key>
-              <string>sha1</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://github.com/secondlife/3p-zlib-ng/releases/download/v2.2.3-r1/zlib_ng-2.2.3-dev0.g8aa13e3.d20250206-darwin64-13183604450.tar.zst</string>
+              <string>https://github.com/AlchemyViewer/3p-zlib-ng/releases/download/v2.2.4-r2/zlib_ng-2.2.4.13482737442-darwin64-13482737442.tar.zst</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -30,11 +30,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>3cdd52f7fb3691789d50f0b40ed6f5642321ff32</string>
+              <string>7062d4f650e7cca63061d3d5675cc17615adfe5e0b6dd7acdf203e48650bda62af8a741e51bac7bb0725476652f68cf28fa958a87f18e75a78ad3eb7a3df8c27</string>
               <key>hash_algorithm</key>
-              <string>sha1</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://github.com/secondlife/3p-zlib-ng/releases/download/v2.2.3-r1/zlib_ng-2.2.3-dev0.g8aa13e3.d20250206-linux64-13183604450.tar.zst</string>
+              <string>https://github.com/AlchemyViewer/3p-zlib-ng/releases/download/v2.2.4-r2/zlib_ng-2.2.4.13482737442-linux64-13482737442.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -44,11 +44,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e802a28139328bb2421ad39e13d996d350d8106d</string>
+              <string>4984b3df1bc9bbce36a5be9ef7410d2387c81653e99beec57785a0961acfca2ebbbbfef9acbbcaae7f2f7a6c1ae708d99cd8d7b2d6aa71d79900694d809b4aba</string>
               <key>hash_algorithm</key>
-              <string>sha1</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://github.com/secondlife/3p-zlib-ng/releases/download/v2.2.3-r1/zlib_ng-2.2.3-dev0.g8aa13e3.d20250206-windows64-13183604450.tar.zst</string>
+              <string>https://github.com/AlchemyViewer/3p-zlib-ng/releases/download/v2.2.4-r2/zlib_ng-2.2.4.13482737442-windows64-13482737442.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -59,9 +59,9 @@
         <key>license_file</key>
         <string>LICENSES/zlib-ng.txt</string>
         <key>copyright</key>
-        <string>Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler</string>
+        <string>Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler</string>
         <key>version</key>
-        <string>2.2.3-dev0.g8aa13e3.d20250206</string>
+        <string>2.2.4.13482737442</string>
         <key>name</key>
         <string>zlib-ng</string>
         <key>canonical_repo</key>
