@@ -19,7 +19,7 @@ jobs:
           choco install -y nasm jom
           echo "C:\Program Files\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "C:\ProgramData\chocolatey\lib\jom\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - uses: secondlife/action-autobuild@v5
+      - uses: AlchemyViewer/action-autobuild@v5
         with:
           addrsize: ${{ matrix.addrsize }}
   release:
@@ -27,6 +27,6 @@ jobs:
     runs-on: [ubuntu-latest]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: secondlife/action-autobuild-release@v3
+      - uses: AlchemyViewer/action-autobuild-release@v4
         with:
           public: true
