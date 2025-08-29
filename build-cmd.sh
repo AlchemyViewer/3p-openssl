@@ -65,70 +65,91 @@ pushd "$OPENSSL_SOURCE_DIR"
 
             load_vsvars
 
-            mkdir -p "$stage/lib/debug"
-            mkdir -p "$stage/lib/release"
+            for arch in sse avx2 ; do
+                platform_target="x64"
+                if [[ "$arch" == "arm64" ]]; then
+                    platform_target="ARM64"
+                fi
 
-            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
-            then
-                targetname=VC-WIN32
-            else
-                # might require running vcvars64.bat from VS studio
-                targetname=VC-WIN64A
-            fi
+                mkdir -p "$stage/lib/$arch/debug"
+                mkdir -p "$stage/lib/$arch/release"
 
-            # Set CFLAGS directly, rather than on the Configure command line.
-            # Configure promises to pass through -switches, but is completely
-            # confounded by /switches. If you change /switches to -switches
-            # using bash string magic, Configure does pass them through --
-            # only to have cl.exe ignore them with extremely verbose warnings!
-            # CFLAGS can accept /switches and correctly pass them to cl.exe.
-            opts="$(replace_switch /Zi /Z7 $LL_BUILD_DEBUG)"
-            plainopts="$(remove_switch /GR $(remove_cxxstd $opts))"
-            export CFLAGS="$plainopts"
-            export CXXFLAGS="$opts"
+                if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
+                then
+                    targetname=VC-WIN32
+                else
+                    # might require running vcvars64.bat from VS studio
+                    targetname=VC-WIN64A
+                fi
 
-            # Debug Build
-            perl Configure "debug-$targetname" zlib no-zlib-dynamic threads no-shared -DUNICODE -D_UNICODE /FS \
-                --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib-ng")" \
-                --with-zlib-lib="$(cygpath -w "$stage/packages/lib/debug/zlibd.lib")"
+                # Set CFLAGS directly, rather than on the Configure command line.
+                # Configure promises to pass through -switches, but is completely
+                # confounded by /switches. If you change /switches to -switches
+                # using bash string magic, Configure does pass them through --
+                # only to have cl.exe ignore them with extremely verbose warnings!
+                # CFLAGS can accept /switches and correctly pass them to cl.exe.
+                opts="$(replace_switch /Zi /Z7 $LL_BUILD_DEBUG)"
+                if [[ "$arch" == "avx2" ]]; then
+                    opts="$(replace_switch /arch:SSE4.2 /arch:AVX2 $opts)"
+                elif [[ "$arch" == "arm64" ]]; then
+                    opts="$(remove_switch /arch:SSE4.2 $opts)"
+                fi
+                plainopts="$(remove_switch /GR $(remove_cxxstd $opts))"
+                export CFLAGS="$plainopts"
+                export CXXFLAGS="$opts"
 
-            jom
+                # Debug Build
+                perl Configure "debug-$targetname" zlib no-zlib-dynamic threads no-shared -DUNICODE -D_UNICODE /FS \
+                    --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib-ng")" \
+                    --with-zlib-lib="$(cygpath -w "$stage/packages/lib/$arch/debug/zlibd.lib")"
 
-            # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                jom test
-            fi
+                jom
 
-            cp -a {libcrypto,libssl}.lib "$stage/lib/debug"
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    jom test
+                fi
 
-            # Clean
-            nmake distclean
+                cp -a {libcrypto,libssl}.lib "$stage/lib/$arch/debug"
 
-            # Now set up Release flags
-            opts="$(replace_switch /Zi /Z7 $LL_BUILD_RELEASE)"
-            plainopts="$(remove_switch /GR $(remove_cxxstd $opts))"
-            export CFLAGS="$plainopts"
-            export CXXFLAGS="$opts"
+                # Clean
+                nmake distclean
 
-            perl Configure "$targetname" zlib no-zlib-dynamic threads no-shared -DUNICODE -D_UNICODE -FS \
-                --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib-ng")" \
-                --with-zlib-lib="$(cygpath -w "$stage/packages/lib/release/zlib.lib")"
+                # Now set up Release flags
+                opts="$(replace_switch /Zi /Z7 $LL_BUILD_RELEASE)"
+                if [[ "$arch" == "avx2" ]]; then
+                    opts="$(replace_switch /arch:SSE4.2 /arch:AVX2 $opts)"
+                elif [[ "$arch" == "arm64" ]]; then
+                    opts="$(remove_switch /arch:SSE4.2 $opts)"
+                fi
+                plainopts="$(remove_switch /GR $(remove_cxxstd $opts))"
 
-            jom
+                export CFLAGS="$plainopts"
+                export CXXFLAGS="$opts"
 
-            # Publish headers
-            mkdir -p "$stage/include/openssl"
+                perl Configure "$targetname" zlib no-zlib-dynamic threads no-shared -DUNICODE -D_UNICODE -FS \
+                    --with-zlib-include="$(cygpath -w "$stage/packages/include/zlib-ng")" \
+                    --with-zlib-lib="$(cygpath -w "$stage/packages/lib/$arch/release/zlib.lib")"
 
-            # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                jom test
-            fi
+                jom
 
-            cp -a {libcrypto,libssl}.lib "$stage/lib/release"
+                # Publish headers
+                mkdir -p "$stage/include/openssl"
 
-            # Publish headers
-            mkdir -p "$stage/include/openssl"
-            cp -a include/openssl/*.h "$stage/include/openssl"
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    jom test
+                fi
+
+                cp -a {libcrypto,libssl}.lib "$stage/lib/$arch/release"
+
+                # Publish headers
+                mkdir -p "$stage/include/openssl"
+                cp -a include/openssl/*.h "$stage/include/openssl"
+
+                # Clean
+                nmake distclean
+            done
         ;;
 
         darwin*)
@@ -233,59 +254,47 @@ pushd "$OPENSSL_SOURCE_DIR"
         ;;
 
         linux*)
-            # Default target per AUTOBUILD_ADDRSIZE
-            opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE}"
-            opts="$(remove_cxxstd $opts)"
-
-            # Handle any deliberate platform targeting
-            if [ -z "${TARGET_CPPFLAGS:-}" ]; then
-                # Remove sysroot contamination from build environment
-                unset CPPFLAGS
-            else
-                # Incorporate special pre-processing flags
-                export CPPFLAGS="${TARGET_CPPFLAGS:-}"
-            fi
-
-            # Force static linkage to libz by moving .sos out of the way
-            trap restore_sos EXIT
-            for solib in "${stage}"/packages/lib/debug/*.so* "${stage}"/packages/lib/release/*.so*; do
-                if [ -f "$solib" ]; then
-                    mv -f "$solib" "$solib".disable
+            for arch in sse avx2 ; do
+                # Default target per autobuild build --address-size
+                opts="${TARGET_OPTS:--m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE}"
+                if [[ "$arch" == "avx2" ]]; then
+                    opts="$(replace_switch -march=x86-64-v2 -march=x86-64-v3 $opts)"
                 fi
+                opts="$(remove_cxxstd $opts)"
+
+                if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
+                then
+                    targetname='linux-generic32'
+                else
+                    targetname='linux-x86_64'
+                fi
+
+                # '--libdir' functions a bit different than usual.  Here it names
+                # a part of a directory path, not the entire thing.  Same with
+                # '--openssldir' as well.
+                # "shared" means build shared and static, instead of just static.
+
+                ./Configure zlib no-zlib-dynamic threads no-shared "$targetname" "$opts" \
+                    --prefix="$stage" --libdir="lib/$arch/release" --openssldir="share" \
+                    --with-zlib-include="$stage/packages/include/zlib-ng" \
+                    --with-zlib-lib="$stage"/packages/lib/$arch/release/
+                make depend
+                make -j$AUTOBUILD_CPU_COUNT
+                make install_sw
+
+                # conditionally run unit tests
+                if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                    make test
+                fi
+
+                make clean
+
+                # By default, 'make install' leaves even the user write bit off.
+                # This causes trouble for us down the road, along about the time
+                # the consuming build tries to strip libraries.  It's easier to
+                # make writable here than fix the viewer packaging.
+                # chmod u+w "$stage"/lib/release/lib{crypto,ssl}.so*
             done
-
-            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
-            then
-                targetname='linux-generic32'
-            else
-                targetname='linux-x86_64'
-            fi
-
-            # '--libdir' functions a bit different than usual.  Here it names
-            # a part of a directory path, not the entire thing.  Same with
-            # '--openssldir' as well.
-            # "shared" means build shared and static, instead of just static.
-
-            ./Configure zlib no-zlib-dynamic threads no-shared "$targetname" "$opts" \
-                --prefix="$stage" --libdir="lib/release" --openssldir="share" \
-                --with-zlib-include="$stage/packages/include/zlib-ng" \
-                --with-zlib-lib="$stage"/packages/lib/release/
-            make depend
-            make -j$AUTOBUILD_CPU_COUNT
-            make install_sw
-
-            # conditionally run unit tests
-            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
-                make test
-            fi
-
-            make clean
-
-            # By default, 'make install' leaves even the user write bit off.
-            # This causes trouble for us down the road, along about the time
-            # the consuming build tries to strip libraries.  It's easier to
-            # make writable here than fix the viewer packaging.
-            # chmod u+w "$stage"/lib/release/lib{crypto,ssl}.so*
         ;;
     esac
     mkdir -p "$stage/LICENSES"
